@@ -1,0 +1,63 @@
+---
+import { getCollection } from 'astro:content';
+
+interface Props {
+    currentNumber: number;
+}
+
+const { currentNumber } = Astro.props;
+const allChapters = await getCollection('chapters');
+const sortedChapters = allChapters.sort((a, b) => a.data.number - b.data.number);
+
+const prevChapter = sortedChapters.find(c => c.data.number < currentNumber && (sortedChapters.find(c2 => c2.data.number === currentNumber)?.data.number - c.data.number === 1));
+// Wait, a simpler way: find the current index
+const currentIndex = sortedChapters.findIndex(c => c.data.number === currentNumber);
+const prev = currentIndex > 0 ? sortedChapters[currentIndex - 1] : null;
+const next = currentIndex < sortedChapters.length - 1 ? sortedChapters[currentIndex + 1] : null;
+---
+
+<div class="chapter-nav">
+    <div class="nav-links">
+        {prev && (
+            <a href={`/chapter/${prev.slug}`} class="nav-link">
+                ← Previous Chapter: {prev.data.title}
+            </a>
+        )}
+        {next && (
+            <a href={`/chapter/${next.slug}`} class="nav-link">
+                Next Chapter: {next.data.title} →
+            </a>
+        )}
+    </div>
+</div>
+
+<style lang="scss">
+    .chapter-nav {
+        width: 100%;
+        display: flex;
+        justify-content: center;
+        margin: 4rem 0;
+        padding: 2rem;
+        border-top: 1px solid #eee;
+
+        .nav-links {
+            display: flex;
+            gap: 2rem;
+            justify-content: space-between;
+            width: 80%;
+            max-width: 80ch;
+        }
+
+        .nav-link {
+            font-family: 'Georgia', serif;
+            text-decoration: none;
+            color: black;
+            font-weight: bold;
+            transition: color 0.3s ease;
+
+            &:hover {
+                color: green;
+            }
+        }
+    }
+</style>
