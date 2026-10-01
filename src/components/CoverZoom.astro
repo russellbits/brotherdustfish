@@ -1,0 +1,42 @@
+---
+---
+<div id="coverZoom" class="cover-zoom">
+    <img src="/images/3D-book-cover.png" alt="Book Cover" />
+</div>
+
+<script>
+    const zoom = document.getElementById('coverZoom');
+    zoom?.addEventListener('click', () => {
+        zoom?.classList.remove('is-visible');
+    });
+</script>
+
+<style lang="scss">
+    .cover-zoom {
+        opacity: 0;
+        visibility: hidden;
+        transition: opacity 0.5s ease, visibility 0.5s ease;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 1000;
+        background-color: rgba(255, 255, 255, 0.9);
+        cursor: pointer;
+
+        img {
+            max-width: 90%;
+            max-height: 90%;
+            object-fit: contain;
+        }
+
+        &.is-visible {
+            opacity: 1;
+            visibility: visible;
+        }
+    }
+</style>
