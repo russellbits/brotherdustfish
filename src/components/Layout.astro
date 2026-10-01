@@ -18,13 +18,26 @@ const { title = "Brother Dustfish" } = Astro.props;
         <title>{title}</title>
         <ClientRouter />
     </head>
-    <body>
-        <div class="layout-wrapper">
-            <Sidebar />
-            <main class="main-content">
-                <slot />
-            </main>
+    <body class="layout-wrapper">
+        <div id="navToggle" class="nav-toggle">
+            <svg id="arrow" width="16px" height="16px" viewBox="0 0 38 72">
+                <polygon points="742 119 778 157 706 157" fill="white" />
+            </svg>
         </div>
+        <Sidebar />
+        <main class="main-content">
+            <slot />
+        </main>
         <CoverZoom />
+        <script>
+            const toggle = document.getElementById('navToggle');
+            const sidebar = document.getElementById('sidebar');
+            const wrapper = document.querySelector('.layout-wrapper');
+
+            toggle?.addEventListener('click', () => {
+                wrapper?.classList.toggle('sidebar-collapsed');
+                sidebar?.classList.toggle('hidden');
+            });
+        </script>
     </body>
 </html>

@@ -19,12 +19,12 @@ const next = currentIndex < sortedChapters.length - 1 ? sortedChapters[currentIn
 <div class="chapter-nav">
     <div class="nav-links">
         {prev && (
-            <a href={`/chapter/${prev.slug}`} class="nav-link">
+            <a href={`/chapter/${String(prev.data.number).padStart(2, '0')}`} class="nav-link">
                 ← Previous Chapter: {prev.data.title}
             </a>
         )}
         {next && (
-            <a href={`/chapter/${next.slug}`} class="nav-link">
+            <a href={`/chapter/${String(next.data.number).padStart(2, '0')}`} class="nav-link">
                 Next Chapter: {next.data.title} →
             </a>
         )}

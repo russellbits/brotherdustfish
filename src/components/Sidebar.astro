@@ -1,40 +1,32 @@
 ---
+import { getCollection } from 'astro:content';
+const allChapters = await getCollection('chapters');
+const sortedChapters = allChapters.sort((a, b) => a.data.number - b.data.number);
 ---
 <div class="sidebar" transition:persist id="sidebar">
     <div class="sidebar-content">
-        <div id="navToggle" class="nav-toggle">
-            <svg id="arrow" width="16px" height="16px" viewBox="0 0 38 72">
-                <polygon points="742 119 778 157 706 157" fill="white" />
-            </svg>
-        </div>
-        
         <a href="#" id="coverTrigger">
             <img src="/images/3D-book-cover-sm.png" alt="Book Cover Preview" width="200" height="277" />
         </a>
         
         <h1 class="book-title">Brother Dustfish</h1>
-        <h2 class="subtitle">Greetings!</h2>
-        <p>The book is nearing completion (as of May 23, 2026)!</p>
-        <p>Enter your email below to get a release notification.</p>
-        
-        <form class="email-form">
-            <input type="text" placeholder="email@example.com" />
-            <button type="submit">Submit</button>
-        </form>
+        <div class="toc">
+            <h2>Chapters</h2>
+            <ul>
+                {sortedChapters.map(chapter => (
+                    <li>
+                        <a href={`/chapter/${String(chapter.data.number).padStart(2, '0')}`}>
+                            Chapter {chapter.data.number}: {chapter.data.title}
+                        </a>
+                    </li>
+                ))}
+            </ul>
+        </div>
     </div>
 </div>
 
 <script>
-    const toggle = document.getElementById('navToggle');
-    const wrapper = document.querySelector('.layout-wrapper');
-    const sidebar = document.getElementById('sidebar');
-
-    toggle?.addEventListener('click', () => {
-        wrapper?.classList.toggle('sidebar-collapsed');
-        sidebar?.classList.toggle('hidden');
-    });
-
-    // Handle Cover Zoom trigger
+    // The trigger is now in the Layout, but we still need the zoom logic
     const trigger = document.getElementById('coverTrigger');
     trigger?.addEventListener('click', (e) => {
         e.preventDefault();
@@ -53,16 +45,6 @@
         color: white;
     }
 
-    .nav-toggle {
-        position: absolute;
-        top: 20px;
-        right: 20px;
-        cursor: pointer;
-        border: 1px solid green;
-        padding: 5px;
-        z-index: 10;
-    }
-
     .book-title {
         font-family: 'Georgia', serif;
         font-size: 1.5rem;
@@ -70,35 +52,35 @@
         margin: 1rem 0;
     }
 
-    .subtitle {
-        font-family: 'Georgia', serif;
-        font-size: 1.2rem;
-        margin-bottom: 1rem;
-    }
-
-    p {
-        font-size: 0.8rem;
-        margin-bottom: 0.5rem;
-    }
-
-    .email-form {
-        display: flex;
-        flex-direction: column;
-        gap: 0.5rem;
-        margin-top: 1rem;
+    .toc {
+        width: 100%;
+        margin-top: 2rem;
         
-        input {
-            padding: 0.5rem;
-            border-radius: 4px;
-            border: none;
+        h2 {
+            font-family: 'Georgia', serif;
+            font-size: 1.2rem;
+            margin-bottom: 1rem;
+            border-bottom: 1px solid white;
+            padding-bottom: 0.5rem;
         }
-        button {
-            padding: 0.5rem;
-            background: green;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
+        
+        ul {
+            list-style: none;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 0.8rem;
+            
+            li a {
+                color: white;
+                text-decoration: none;
+                font-size: 0.9rem;
+                transition: color 0.3s ease;
+                
+                &:hover {
+                    color: green;
+                }
+            }
         }
     }
 </style>
