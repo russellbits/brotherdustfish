@@ -1,0 +1,9 @@
+{
+  "name": "brother-dustfish",
+  "type": "module",
+  "dependencies": {
+    "astro": "latest",
+    "@astrojs/mdx": "latest",
+    "sass": "latest"
+  }
+}
