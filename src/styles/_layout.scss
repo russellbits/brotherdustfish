@@ -2,7 +2,11 @@
     display: grid;
     grid-template-columns: $sidebar-width 1fr;
     min-height: 100vh;
-    transition: grid-template-columns $transition-speed ease-in-out;
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    transition: grid-template-columns $transition-speed ease-in-out,
+        background-color 0.4s ease,
+        color 0.4s ease;
 
     &.sidebar-collapsed {
         grid-template-columns: 0px 1fr;
@@ -14,9 +18,10 @@
     height: 100vh;
     position: sticky;
     top: 0;
-    background-color: $sidebar-bg;
-    color: $text-color-light;
-    transition: transform $transition-speed ease-in-out;
+    background-color: var(--sidebar-bg);
+    color: var(--text-color-light);
+    transition: transform $transition-speed ease-in-out,
+        background-color 0.4s ease;
     overflow: hidden;
 
     &.hidden {
@@ -26,11 +31,49 @@
 
 .main-content {
     width: 1fr;
-    background-color: $bg-color;
+    background-color: var(--bg-color);
     display: flex;
     flex-direction: column;
     align-items: center;
     overflow-y: auto;
+    transition: background-color 0.4s ease, color 0.4s ease;
+}
+
+.nav-toggle {
+    position: fixed;
+    top: 20px;
+    left: 20px;
+    z-index: 1001;
+    display: grid;
+    place-items: center;
+    width: 34px;
+    height: 34px;
+    padding: 0;
+    cursor: pointer;
+    background: var(--toggle-bg);
+    border: 1px solid var(--toggle-border);
+    border-radius: 999px;
+    color: var(--toggle-knob);
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.12);
+    -webkit-tap-highlight-color: transparent;
+    transition: left $transition-speed ease-in-out,
+        background-color 0.4s ease,
+        border-color 0.4s ease,
+        color 0.4s ease;
+
+    &:focus-visible {
+        outline: 2px solid var(--accent-color);
+        outline-offset: 3px;
+    }
+
+    svg {
+        display: block;
+        transition: transform 0.4s ease;
+    }
+}
+
+.layout-wrapper.sidebar-collapsed .nav-toggle svg {
+    transform: rotate(180deg);
 }
 
 @media (max-width: 1023px) {
@@ -48,10 +91,24 @@
         height: auto;
         position: relative;
         transform: none !important;
-        background-color: $sidebar-bg;
+        background-color: var(--sidebar-bg);
     }
 
     .main-content {
         width: 100%;
+    }
+    
+    .nav-toggle {
+        display: none; // Hide toggle on mobile as it's just a vertical stack
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .layout-wrapper,
+    .main-content,
+    .sidebar,
+    .nav-toggle,
+    .nav-toggle svg {
+        transition: none;
     }
 }

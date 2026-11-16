@@ -2,7 +2,7 @@
 <svg width="132px" height="87px" viewBox="0 0 132 87" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
     <title>Keyboard Keys</title>
     <g id="Page-1" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
-        <g id="Main-Page" transform="translate(-139.000000, -589.000000)" fill="#FFFFFF" fill-rule="nonzero">
+        <g id="Main-Page" transform="translate(-139.000000, -589.000000)" fill="#000000" fill-rule="nonzero">
             <g id="Instructions" transform="translate(89.000000, 589.000000)">
                 <g id="Keyboard-Keys" transform="translate(50.000000, 0.000000)">
                     <path d="M78.9050279,0 L53.0949721,0 C48.6242424,0 45,3.62424244 45,8.09497207 L45,33.9050279 C45,38.3757576 48.6242424,42 53.0949721,42 L78.9050279,42 C83.3757576,42 87,38.3757576 87,33.9050279 L87,8.09497207 C87,3.62424244 83.3757576,0 78.9050279,0 Z M78.9050279,1.4990689 C82.5478447,1.4990689 85.5009311,4.45215534 85.5009311,8.09497207 L85.5009311,33.9050279 C85.5009311,37.5478447 82.5478447,40.5009311 78.9050279,40.5009311 L53.0949721,40.5009311 C49.4521553,40.5009311 46.4990689,37.5478447 46.4990689,33.9050279 L46.4990689,8.09497207 C46.4990689,4.45215534 49.4521553,1.4990689 53.0949721,1.4990689 L78.9050279,1.4990689 Z" id="Rectangle"></path>

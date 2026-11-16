@@ -1,16 +1,13 @@
 ---
 import { getCollection } from 'astro:content';
+import { chapterHref, orderedChapters } from '../lib/chapters';
 
 interface Props {
     currentNumber: number;
 }
 
 const { currentNumber } = Astro.props;
-const allChapters = await getCollection('chapters');
-const sortedChapters = allChapters.sort((a, b) => a.data.number - b.data.number);
-
-const prevChapter = sortedChapters.find(c => c.data.number < currentNumber && (sortedChapters.find(c2 => c2.data.number === currentNumber)?.data.number - c.data.number === 1));
-// Wait, a simpler way: find the current index
+const sortedChapters = orderedChapters(await getCollection('chapters'));
 const currentIndex = sortedChapters.findIndex(c => c.data.number === currentNumber);
 const prev = currentIndex > 0 ? sortedChapters[currentIndex - 1] : null;
 const next = currentIndex < sortedChapters.length - 1 ? sortedChapters[currentIndex + 1] : null;
@@ -19,12 +16,12 @@ const next = currentIndex < sortedChapters.length - 1 ? sortedChapters[currentIn
 <div class="chapter-nav">
     <div class="nav-links">
         {prev && (
-            <a href={`/chapter/${String(prev.data.number).padStart(2, '0')}`} class="nav-link">
+            <a href={chapterHref(prev)} class="nav-link">
                 ← Previous Chapter: {prev.data.title}
             </a>
         )}
         {next && (
-            <a href={`/chapter/${String(next.data.number).padStart(2, '0')}`} class="nav-link">
+            <a href={chapterHref(next)} class="nav-link">
                 Next Chapter: {next.data.title} →
             </a>
         )}
@@ -38,7 +35,7 @@ const next = currentIndex < sortedChapters.length - 1 ? sortedChapters[currentIn
         justify-content: center;
         margin: 4rem 0;
         padding: 2rem;
-        border-top: 1px solid #eee;
+        border-top: 1px solid var(--border-color);
 
         .nav-links {
             display: flex;
@@ -51,12 +48,12 @@ const next = currentIndex < sortedChapters.length - 1 ? sortedChapters[currentIn
         .nav-link {
             font-family: 'Georgia', serif;
             text-decoration: none;
-            color: black;
+            color: var(--text-color);
             font-weight: bold;
             transition: color 0.3s ease;
 
             &:hover {
-                color: green;
+                color: var(--accent-color);
             }
         }
     }

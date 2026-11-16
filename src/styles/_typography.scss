@@ -21,7 +21,11 @@ article {
         text-align: center;
         line-height: clamp(0.5rem, 5vw, 1.8rem);
         text-transform: uppercase;
-        margin: 1rem;
+        margin: 6rem 1rem 1rem 1rem;
+    }
+
+    .chapter-summary {
+        margin: 1rem 1rem 4rem 1rem;
     }
 
     h1, h2, h3, h4, h5 {
@@ -29,15 +33,15 @@ article {
     }
 
     h1 {
-        font-size: clamp(1rem, 5vw, 5rem);
-        line-height: clamp(0.5rem, 5vw, 1.8rem);
+        font-size: clamp(1rem, 5vw, 4rem);
+        line-height: clamp(0.5rem, 5vw, 2.8rem);
         margin: 1rem;
     }
 
     p {
         font-family: $primary-font;
         font-size: clamp(0.5rem, 5vw, 1rem);
-        line-height: clamp(0.8rem, 5vw, 1.2rem);
+        line-height: clamp(1.2rem, 5vw, 1.5rem);
         text-align: left;
         text-indent: 2rem;
         max-width: 60vw;

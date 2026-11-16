@@ -3,21 +3,60 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>2D Grid Navigation with &lt;section&gt;</title>
-    <link rel="stylesheet" href="house.css">
+    <title>"Brother Dustfish" — A Novel by R.E. Warner</title>
+    <link rel="stylesheet" href="stylesheets/house.css">
 </head>
 <body>
 
-    <div class="key-instructions">
-        <img src="images/keyboard-arrow-keys.svg" alt="Keyboard Arrow Keys" />
-        <h4>Navigate with keys or swipe.</h4>
+    <div id="fadeTarget" class="cover-zoom">
+        <img src="images/3D-book-cover.png" />
     </div>
+
+    <nav>
+        <div id="navToggle">
+            <a href="#">
+                <?xml version="1.0" encoding="UTF-8"?>
+                <svg id="arrow" width="38px" height="72px" viewBox="0 0 38 72" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+                    <title>Triangle</title>
+                    <g id="Page-1" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+                        <g id="First-Page,-Menu-Open" transform="translate(-723.000000, -102.000000)" fill="#FFFFFF">
+                            <polygon id="Triangle" transform="translate(742.000000, 138.000000) rotate(-90.000000) translate(-742.000000, -138.000000) " points="742 119 778 157 706 157"></polygon>
+                        </g>
+                    </g>
+                </svg>
+            </a>
+        </div>
+        <a id="fadeTrigger" href="#"><img src="images/3D-book-cover-sm.png" width="200" height="277"/></a>
+        <h1>Brother Dustfish</h1>
+        <h2>Greetings!</h2>
+        <p>The book is nearing completion (as of May 23, 2026)!</p>
+        <p>Enter you email below to get a release notification.</p>
+        <form>
+            <input type="text"/>
+            <submit />
+        </form>
+    </nav>
+
+    <!--<div class="navigation-instructions">
+        <img src="images/keyboard-arrow-keys.svg" alt="Keyboard Arrow Keys" />
+        <p>Navigate with keys or swipe.</p>
+    </div>-->
 
     <main id="grid-container">
         <section>
-          <h1>Home</h1>
-          <p>This is section 0,0 of &lt;section&gt; tags.</p>
-          <p></p>
+            <article>
+                <div class="book-title">Brother Dustfish</div>
+
+                <div class="chapter-ref">Chapter 1</div>
+
+                <h2>The Desert of Idex Mortez</h2>
+
+                <h4>In which we meet Able and learn of his simple existence in the Desert of Dead Ideas.</h4>
+
+                <p>Able stood in the starless, crimson night, beneath the great, glowing Skybow of the Goliaths, holding a small squirming, copper rodent. It fizzled and smoked and threw out sparks in his hands. Able presses his metallic thumb to the top of the creature's head. The lights in its eyes go out. His own eyes, circles of cyan light, scanned the creature's wound. He lay the little desert rodent on its back and removed a bag of electrol from his backpack. He poured it liberally on the little creature's back legs and moving his hands as if he were engaged in the delicate choreography of sewing, worked the electrol into the legs where the sparkling substance formed new bonds between pistons and new shiny ligaments. After ten minutes of this, the rodent's four back legs looked solid to Able, so he held the creature in front of him, pressed his thumb to the critter's head, and the gold lights in its eyes returned.</p>
+
+                <p>"There. All fixed!"</p>
+            </article>
         </section>
         <section><h1>1,0</h1></section>
         <section><h1>2,0</h1></section>
@@ -35,5 +74,47 @@
     </main>
 
     <script src="script.js"></script>
+    <script>
+    // Grab our elements from the page
+    const trigger = document.getElementById('fadeTrigger')
+    const target = document.getElementById('fadeTarget')
+    const navElement = document.querySelector('nav');
+    const navToggle = document.getElementById('navToggle')
+
+    document.addEventListener('DOMContentLoaded', function() {
+      const element = document.querySelector('.navigation-instructions');
+
+      // Initially, add a delay to fade out the element after 10 seconds
+      setTimeout(() => {
+        element.classList.add('hidden');
+      }, 5000);
+
+      // Add click event listener to fade out the element when clicked
+      element.addEventListener('click', () => {
+        element.classList.add('hidden');
+      });
+    });
+
+    navElement.addEventListener('click', function() {
+      if (navElement.classList.contains('active')) {
+        // Deactivate
+        navElement.classList.remove('active')
+        arrowElement.classList.remove('active')
+      } else {
+        // Activate
+        navElement.classList.add('active')
+        arrowElement.classList.add('active')
+      }
+    })
+
+    trigger.addEventListener('click', function(event) {
+      event.preventDefault()
+      target.classList.toggle('is-visible')
+    })
+
+    target.addEventListener('click', function() {
+      target.classList.remove('is-visible')
+    })
+    </script>
 </body>
 </html>

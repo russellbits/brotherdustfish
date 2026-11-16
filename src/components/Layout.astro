@@ -1,6 +1,7 @@
 ---
 import Sidebar from './Sidebar.astro';
 import CoverZoom from './CoverZoom.astro';
+import ThemeToggle from './ThemeToggle.astro';
 import { ClientRouter } from 'astro:transitions';
 import '../styles/main.scss';
 
@@ -16,12 +17,24 @@ const { title = "Brother Dustfish" } = Astro.props;
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>{title}</title>
+        <script is:inline>
+            (function () {
+                try {
+                    var stored = localStorage.getItem('theme');
+                    var prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+                    var theme = stored === 'dark' || stored === 'light' ? stored : (prefersDark ? 'dark' : 'light');
+                    document.documentElement.dataset.theme = theme;
+                } catch (e) {
+                    document.documentElement.dataset.theme = 'light';
+                }
+            })();
+        </script>
         <ClientRouter />
     </head>
     <body class="layout-wrapper">
         <div id="navToggle" class="nav-toggle">
-            <svg id="arrow" width="16px" height="16px" viewBox="0 0 38 72">
-                <polygon points="742 119 778 157 706 157" fill="white" />
+            <svg id="arrow" width="16px" height="16px" viewBox="0 0 16 16" aria-hidden="true">
+                <polygon points="11 2 11 14 4 8" fill="currentColor" />
             </svg>
         </div>
         <Sidebar />
@@ -29,14 +42,14 @@ const { title = "Brother Dustfish" } = Astro.props;
             <slot />
         </main>
         <CoverZoom />
+        <ThemeToggle />
         <script>
-            const toggle = document.getElementById('navToggle');
-            const sidebar = document.getElementById('sidebar');
-            const wrapper = document.querySelector('.layout-wrapper');
-
-            toggle?.addEventListener('click', () => {
-                wrapper?.classList.toggle('sidebar-collapsed');
-                sidebar?.classList.toggle('hidden');
+            // Delegate from document so the toggle keeps working after
+            // ClientRouter swaps the page body (module scripts run only once).
+            document.addEventListener('click', (e) => {
+                if (!(e.target instanceof Element) || !e.target.closest('#navToggle')) return;
+                document.querySelector('.layout-wrapper')?.classList.toggle('sidebar-collapsed');
+                document.getElementById('sidebar')?.classList.toggle('hidden');
             });
         </script>
     </body>

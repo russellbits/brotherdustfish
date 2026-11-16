@@ -7,13 +7,13 @@ let curY = 0;
 const container = document.getElementById('grid-container');
 const sections = document.querySelectorAll('section');
 
-// 1. Initialize Random Colors
+/*
 sections.forEach(section => {
     const randomColor = `hsl(${Math.random() * 360}, 60%, 50%)`;
     section.style.backgroundColor = randomColor;
 });
+*/
 
-// 2. Navigation Function
 function navigate() {
     // Keep coordinates within bounds
     curX = Math.max(0, Math.min(curX, cols - 1));

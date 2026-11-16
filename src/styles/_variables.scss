@@ -1,7 +1,47 @@
+// Layout tokens (compile-time)
 $sidebar-width: 350px;
 $primary-font: 'Georgia', serif;
 $transition-speed: 0.5s;
-$bg-color: rgba(255, 255, 255, 0.9);
-$sidebar-bg: rgba(0, 0, 0, 0.7);
-$text-color: black;
-$text-color-light: white;
+
+// Theme tokens (runtime, switchable via [data-theme])
+:root {
+    color-scheme: light;
+
+    --bg-color: #ffffff;
+    --sidebar-bg: rgba(0, 0, 0, 0.7);
+    --text-color: #1a1a1a;
+    --text-color-light: #ffffff;
+    --text-muted: #6b6b6b;
+    --accent-color: #2f6b3f;
+    --accent-contrast: #ffffff;
+    --border-color: #e5e0d8;
+    --cover-overlay: rgba(255, 255, 255, 0.9);
+    --toggle-bg: #ffffff;
+    --toggle-border: rgba(0, 0, 0, 0.18);
+    --toggle-knob: #1a1a1a;
+    --toggle-knob-icon: #ffffff;
+    --sidebar-link-hover: #7fbf8f;
+
+    background-color: var(--bg-color);
+}
+
+:root[data-theme="dark"] {
+    color-scheme: dark;
+
+    --bg-color: #14161a;
+    --sidebar-bg: rgba(0, 0, 0, 0.85);
+    --text-color: #e8e6e1;
+    --text-color-light: #ffffff;
+    --text-muted: #9a9a9a;
+    --accent-color: #7fbf8f;
+    --accent-contrast: #14161a;
+    --border-color: #2a2f36;
+    --cover-overlay: rgba(20, 22, 26, 0.92);
+    --toggle-bg: #1f232a;
+    --toggle-border: rgba(255, 255, 255, 0.22);
+    --toggle-knob: #e8e6e1;
+    --toggle-knob-icon: #14161a;
+    --sidebar-link-hover: #7fbf8f;
+
+    background-color: var(--bg-color);
+}
