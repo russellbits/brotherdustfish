@@ -197,4 +197,16 @@
             transition: none;
         }
     }
+    @media (max-width: 1023px) {
+        .theme-toggle {
+            // Half the visual size, anchored to the same corner. A transform
+            // rather than a smaller box, deliberately: the element's hit area
+            // stays 64x34, because a literal 32x17 target is well under the ~44px
+            // touch guidance and would be fiddly to hit on a phone.
+            transform: scale(0.5);
+            transform-origin: top right;
+            top: 14px;
+            right: 14px;
+        }
+    }
 </style>

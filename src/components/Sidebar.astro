@@ -1,30 +1,64 @@
 ---
 import { getCollection } from 'astro:content';
-import { chapterHref, orderedChapters } from '../lib/chapters';
+import { orderedChapters } from '../lib/chapters';
+import SignupForm from './SignupForm.astro';
+import TocList from './TocList.astro';
+
+interface Props {
+    /**
+     * True on the landing page. Below 1024px that page's sidebar is the site's
+     * cover: a full-height stage holding the cover art and the sign-up form.
+     * Chapter pages get a compact header instead, so that arriving at a chapter
+     * never makes the reader scroll a whole screen before reaching any prose.
+     */
+    splash?: boolean;
+}
+
+const { splash = false } = Astro.props;
 const sortedChapters = orderedChapters(await getCollection('chapters'));
 ---
-<div class="sidebar" transition:persist id="sidebar">
+
+<div class="sidebar" transition:persist id="sidebar" data-splash={splash ? 'true' : undefined}>
     <div class="sidebar-content">
         <h1 class="book-title"><a href="/">Brother Dustfish</a></h1>
         <!-- A button, not <a href="#">: the ClientRouter intercepts any click on
              `a, area` and treats a same-page href as a real navigation, which
              swapped the body out from under the freshly opened overlay. -->
+        <!-- <picture>, not a swapped src, so a phone downloads only the art it
+             renders: the splash wants the large cover, while the desktop sidebar
+             and the chapter-page header keep the 100 KB thumbnail. -->
         <button type="button" id="coverTrigger" class="cover-trigger" aria-label="Show the cover larger">
-            <img src="/images/3D-book-cover-sm.png" alt="Book Cover Preview" width="200" height="277" />
+            <picture>
+                <source
+                    media="(max-width: 1023px)"
+                    srcset={splash ? '/images/3D-book-cover.png' : '/images/3D-book-cover-sm.png'}
+                />
+                <img src="/images/3D-book-cover-sm.png" alt="Book Cover Preview" />
+            </picture>
         </button>
-        <div class="toc">
+
+        {
+            splash && (
+                <div class="splash-signup">
+                    <SignupForm />
+                </div>
+            )
+        }
+
+        <!-- The table of contents is rendered twice on purpose: a visible list on
+             desktop, and a native disclosure below it. A single <details> cannot
+             be forced open by CSS reliably, because browsers hide its closed
+             content in a way author styles do not always override. TocList keeps
+             the chapter markup in one place. -->
+        <nav class="toc" aria-label="Table of contents">
             <h2>Table of Contents</h2>
-            <ul>
-                {sortedChapters.map(chapter => (
-                    <li>
-                        <a href={chapterHref(chapter)}>
-                            <span class="chapter-number">Chapter {chapter.data.number}</span>
-                            <span class="chapter-title">{chapter.data.title}</span>
-                        </a>
-                    </li>
-                ))}
-            </ul>
-        </div>
+            <TocList chapters={sortedChapters} />
+        </nav>
+
+        <details class="toc-disclosure">
+            <summary>Table of Contents</summary>
+            <TocList chapters={sortedChapters} />
+        </details>
     </div>
 </div>
 
@@ -78,52 +112,77 @@ const sortedChapters = orderedChapters(await getCollection('chapters'));
         }
     }
 
+    // Desktop's always-visible contents. Below 1024px the disclosure replaces it.
     .toc {
         width: 100%;
-        // margin-top: 2rem;
         margin: 2rem 0 2rem 5rem;
         // The sidebar chrome (title, cover) stays centered; the TOC reads as a
         // left-aligned list.
         text-align: left;
-        --toc-number-size: 0.9rem;
 
         h2 {
             font-family: 'Georgia', serif;
             font-size: 1.6rem;
             margin-bottom: 1rem;
-            // border-bottom: 1px solid var(--text-color-light);
             padding-bottom: 0.5rem;
         }
+    }
 
-        ul {
-            list-style: none;
-            padding: 0;
-            display: flex;
-            flex-direction: column;
-            justify-items: left;
-            gap: 1.1rem;
+    .toc-disclosure {
+        display: none;
+    }
 
-            li a {
-                display: flex;
-                flex-direction: column;
-                align-items: flex-start;
-                row-gap: 0.15rem;
+    @media (max-width: 1023px) {
+        // The landing page's sidebar is the site's cover: a full-height stage
+        // whose contents are centered down the screen.
+        [data-splash] .sidebar-content {
+            justify-content: center;
+            gap: 1.5rem;
+            // dvh, not vh: on mobile Safari `vh` includes the address bar, so the
+            // stage would be taller than the screen and clipped. The vh line is
+            // the fallback for browsers without dvh.
+            min-height: 100vh;
+            min-height: 100dvh;
+            padding: 2rem 1.25rem;
+        }
+
+        // Capped, so the form and the disclosure below the art stay reachable
+        // without scrolling past an entire screen of cover.
+        [data-splash] .cover-trigger img {
+            width: auto;
+            max-width: 84vw;
+            max-height: min(50dvh, 400px);
+            // Matches the art currently wired in: 3D-book-cover.png is 1200x1200.
+            // Change to `1 / 1.385` when the portrait mobile cover lands.
+            aspect-ratio: 1 / 1;
+        }
+
+        // A chapter page's cover is a header, not a splash, so it is capped hard.
+        :not([data-splash]) .cover-trigger img {
+            width: auto;
+            height: auto;
+            max-height: 120px;
+        }
+
+        .toc {
+            display: none;
+        }
+
+        .toc-disclosure {
+            display: block;
+            width: 100%;
+            text-align: left;
+
+            summary {
+                font-family: 'Georgia', serif;
+                font-size: 1.3rem;
                 color: var(--text-color-light);
-                text-decoration: none;
-                transition: color 0.3s ease;
+                cursor: pointer;
+                padding: 0.6rem 0;
+            }
 
-                &:hover {
-                    color: var(--sidebar-link-hover);
-                }
-
-                .chapter-number {
-                    font-size: var(--toc-number-size);
-                }
-
-                .chapter-title {
-                    font-size: calc(var(--toc-number-size) + 5px);
-                    line-height: 1.25;
-                }
+            &[open] summary {
+                margin-bottom: 1rem;
             }
         }
     }

@@ -1,0 +1,49 @@
+---
+// The email sign-up. Extracted from index.astro so the mobile splash and the
+// landing block share one definition rather than two that drift apart.
+---
+
+<form class="signup-form">
+    <input type="text" placeholder="email@example.com" aria-label="Email address" />
+    <button type="submit">Submit</button>
+</form>
+
+<style lang="scss">
+    .signup-form {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+        margin: 2rem 0;
+
+        input {
+            padding: 0.8rem;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            // Was a hardcoded `width: 300px`. Together with this form's parent
+            // padding that needed 364px of viewport — wider than a 360px phone —
+            // and one overflowing element gives the whole page a sideways scroll,
+            // which makes everything below it look mis-sized.
+            width: 100%;
+            max-width: 300px;
+            margin-inline: auto;
+            background: var(--bg-color);
+            color: var(--text-color);
+            transition: border-color 0.3s ease, background-color 0.3s ease, color 0.3s ease;
+
+            &::placeholder {
+                color: var(--text-muted);
+            }
+        }
+
+        button {
+            padding: 0.8rem;
+            background: var(--accent-color);
+            color: var(--accent-contrast);
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+    }
+</style>

@@ -1,0 +1,58 @@
+---
+import { chapterHref, type Chapter } from '../lib/chapters';
+
+interface Props {
+    chapters: Chapter[];
+}
+
+// The chapter list, used twice: once in the sidebar's always-visible desktop
+// table of contents, and once inside the mobile disclosure. Astro scopes styles
+// to the component that declares them, so the list's own styling lives here
+// rather than in whichever parent happens to render it.
+const { chapters } = Astro.props;
+---
+
+<ul class="toc-list">
+    {chapters.map((chapter) => (
+        <li>
+            <a href={chapterHref(chapter)}>
+                <span class="chapter-number">Chapter {chapter.data.number}</span>
+                <span class="chapter-title">{chapter.data.title}</span>
+            </a>
+        </li>
+    ))}
+</ul>
+
+<style lang="scss">
+    .toc-list {
+        list-style: none;
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 1.1rem;
+        --toc-number-size: 0.9rem;
+
+        li a {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            row-gap: 0.15rem;
+            color: var(--text-color-light);
+            text-decoration: none;
+            transition: color 0.3s ease;
+
+            &:hover {
+                color: var(--sidebar-link-hover);
+            }
+
+            .chapter-number {
+                font-size: var(--toc-number-size);
+            }
+
+            .chapter-title {
+                font-size: calc(var(--toc-number-size) + 5px);
+                line-height: 1.25;
+            }
+        }
+    }
+</style>

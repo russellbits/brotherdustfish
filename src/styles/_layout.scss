@@ -89,7 +89,11 @@
     .layout-wrapper {
         display: flex;
         flex-direction: column;
-        
+        // A guard, not a fix. It sits on the wrapper rather than on .main-content
+        // because the drop system's tooltips are absolutely positioned, and an
+        // overflow rule on their own container would clip them.
+        overflow-x: hidden;
+
         &.sidebar-collapsed {
             grid-template-columns: 0px 1fr; // Fallback
         }
@@ -105,6 +109,10 @@
 
     .main-content {
         width: 100%;
+        // The reading pane is the screen minus a small gutter. This is the single
+        // source of that gutter on mobile: .chapter-content and .landing-content
+        // drop their own horizontal padding at this width rather than doubling it.
+        padding: 0 1.25rem;
     }
     
     .nav-toggle {
