@@ -208,3 +208,14 @@ test('the expansion rules are global, not scoped to a component', { skip }, () =
 test('the chapter page loads that stylesheet', { skip }, () => {
   assert.match(html(), /href="\/_astro\/Layout\.[^"]+\.css"/);
 });
+
+// A drop image is narrower than the reading column, so with no rules the frame
+// stretches to the column and strands the picture at its left edge, and below the
+// picture's own width the picture overflows the column entirely.
+test('drop images are capped, and their frame hugs them', { skip }, () => {
+  const css = stylesheet();
+
+  assert.ok(/figure img\{/.test(css), 'no rule constrains an image inside a figure');
+  assert.match(css, /figure img\{[^}]*max-width/, 'drop images are not capped to their container');
+  assert.match(css, /:has\(> ?figure\)/, 'the frame is not sized to its contents');
+});

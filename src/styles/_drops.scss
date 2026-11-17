@@ -181,6 +181,42 @@ a.hx-link.expanded {
     border-top: 1px solid var(--expansion-rule);
 }
 
+// ── an image drop ───────────────────────────────
+//
+// A drop image is narrower than the reading column — the sample one is 500px
+// against a column of ~900 — so a frame stretched to the column strands the
+// picture at its left edge with a wide empty box beside it. Below the picture's own
+// width the same missing rule overflows the column instead.
+//
+// So the frame shrinks to its contents and centres on the column, and the image is
+// only ever *capped*, never stretched: it renders at its own width on a desktop and
+// shrinks to fit on a phone.
+.expansion-paragraph:has(> figure) {
+    width: fit-content;
+    max-width: 100%;
+    margin-inline: auto;
+    // The picture should reach the column edge on a phone, so the frame gives up
+    // its side padding and lets the image sit flush inside it.
+    padding-inline: 0;
+    // Centres the caption. The image fills the frame, so it needs no centring of
+    // its own.
+    text-align: center;
+}
+
+.expansion-paragraph figure {
+    margin: 0;
+}
+
+.expansion-paragraph figure img {
+    display: block;
+    max-width: 100%;
+    height: auto;
+}
+
+.expansion-paragraph figcaption {
+    margin-top: 0.5em;
+}
+
 // A link whose drop file does not exist yet: visible, not silent.
 .expansion-missing {
     display: inline;
