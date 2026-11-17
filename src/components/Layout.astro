@@ -42,8 +42,27 @@ const { title = "Brother Dustfish", splash = false } = Astro.props;
             // listener inside drops-client is delegated to the document, because
             // htmx fires htmx:afterSwap on the swap target — which is a sibling of
             // the link for sentence and paragraph modes.
-            import 'htmx.org';
+            import htmx from 'htmx.org';
             import '../scripts/drops-client.ts';
+
+            // htmx initialises the document once, on load, and then watches for
+            // nothing: there is no MutationObserver anywhere in it (verified in
+            // 2.0.11), and its ESM build does not set window.htmx. Astro's
+            // ClientRouter replaces the page body on every in-site navigation, so a
+            // drop link that arrived that way keeps inert hx-get attributes — the
+            // click is never cancelled, nothing swaps, and the browser follows the
+            // href to the fragment URL instead.
+            //
+            // Re-processing after each page load is the documented
+            // htmx-with-a-router pattern. It is idempotent, because processNode()
+            // skips any node whose attribute hash it has already seen.
+            //
+            // This lives in the layout rather than in drops-client.ts because
+            // importing htmx evaluates it, and it reads `location` at module scope —
+            // so a module that imports it can no longer be imported by node:test.
+            document.addEventListener('astro:page-load', () => {
+                htmx.process(document.body);
+            });
         </script>
     </head>
     <body class="layout-wrapper">
