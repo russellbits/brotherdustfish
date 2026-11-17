@@ -132,3 +132,51 @@ test('every swap target in a chapter page exists in that page', { skip }, () => 
     }
   }
 });
+
+// ── styles ───────────────────────────────────────────────────────────────────
+
+const stylesheet = () => {
+  const dir = join(DIST, '_astro');
+  const file = existsSync(dir)
+    ? readdirSync(dir).find((name) => name.startsWith('Layout.') && name.endsWith('.css'))
+    : undefined;
+
+  assert.ok(file, 'the built stylesheet is missing');
+  return readFileSync(join(dir, file), 'utf8');
+};
+
+test('every expansion class is present in the stylesheet', { skip }, () => {
+  const css = stylesheet();
+
+  for (const selector of [
+    '.hx-link',
+    '.expansion-inline',
+    '.expansion-sentence',
+    '.expansion-paragraph',
+    '.expansion-missing',
+    '.expansion-fade',
+    '.htmx-indicator',
+    '.word',
+    '.collapsing',
+    '[data-tooltip]',
+  ]) {
+    assert.ok(css.includes(selector), `stylesheet is missing ${selector}`);
+  }
+});
+
+// Scoped component styles compile to `.expansion-inline[data-astro-cid-…]`, and a
+// fetched fragment never carries that attribute, so the rules would silently not
+// apply to any expansion. They must be global.
+test('the expansion rules are global, not scoped to a component', { skip }, () => {
+  const scoped = [
+    ...stylesheet().matchAll(
+      /\.(expansion-[a-z]+|hx-link|htmx-indicator|word|collapsing)\[data-astro-cid-/g,
+    ),
+  ].map((match) => match[1]);
+
+  assert.deepEqual(scoped, []);
+});
+
+test('the chapter page loads that stylesheet', { skip }, () => {
+  assert.match(html(), /href="\/_astro\/Layout\.[^"]+\.css"/);
+});
