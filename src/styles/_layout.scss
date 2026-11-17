@@ -85,7 +85,7 @@
     transform: rotate(180deg);
 }
 
-@media (max-width: 1023px) {
+@media (max-width: $tablet-max) {
     .layout-wrapper {
         display: flex;
         flex-direction: column;

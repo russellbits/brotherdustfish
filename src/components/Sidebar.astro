@@ -1,6 +1,7 @@
 ---
 import { getCollection } from 'astro:content';
 import { orderedChapters } from '../lib/chapters';
+import { TABLET_QUERY } from '../lib/breakpoints';
 import SignupForm from './SignupForm.astro';
 import TocList from './TocList.astro';
 
@@ -30,7 +31,7 @@ const sortedChapters = orderedChapters(await getCollection('chapters'));
         <button type="button" id="coverTrigger" class="cover-trigger" aria-label="Show the cover larger">
             <picture>
                 <source
-                    media="(max-width: 1023px)"
+                    media={TABLET_QUERY}
                     srcset={splash ? '/images/book-cover-900x1245.jpg' : '/images/3D-book-cover-sm.png'}
                 />
                 <!-- The alt names the book rather than describing the file: on
@@ -66,10 +67,12 @@ const sortedChapters = orderedChapters(await getCollection('chapters'));
 </div>
 
 <script>
-    // Mobile only, and only when a chapter was chosen from the contents: dismiss the
-    // disclosure and land the reader at the top of the chapter content rather than
-    // on the header the sidebar leaves above it.
-    const MOBILE = '(max-width: 1023px)';
+    import { TABLET_QUERY } from '../lib/breakpoints';
+
+    // Below the layout breakpoint, and only when a chapter was chosen from the
+    // contents: dismiss the disclosure and land the reader at the top of the chapter
+    // content rather than on the header the sidebar leaves above it.
+    const STACKED = TABLET_QUERY;
     let choseChapter = false;
 
     document.addEventListener('click', (event) => {
@@ -94,21 +97,22 @@ const sortedChapters = orderedChapters(await getCollection('chapters'));
         if (!choseChapter) return;
         choseChapter = false;
 
-        if (!window.matchMedia(MOBILE).matches) return;
+        if (!window.matchMedia(STACKED).matches) return;
         document.querySelector('.main-content')?.scrollIntoView({ block: 'start' });
     });
 
     // Tapping the cover takes the reader to the sign-up.
     //
-    // The cover fills the first screen on mobile, so the form is deliberately below
-    // the fold — this tap is the affordance that reaches it. The zoom overlay is a
-    // desktop affordance for the small 3D thumbnail and is suppressed at this width
-    // in CoverZoom, because enlarging an already screen-sized cover achieves nothing.
+    // The cover fills the first screen below the layout breakpoint, so the form is
+    // deliberately below the fold — this tap is the affordance that reaches it. The
+    // zoom overlay is a desktop affordance for the small 3D thumbnail and is
+    // suppressed below the breakpoint, because enlarging an already screen-sized
+    // cover achieves nothing.
     document.addEventListener('click', (event) => {
         const target = event.target;
         if (!(target instanceof Element)) return;
         if (!target.closest('#coverTrigger')) return;
-        if (!window.matchMedia(MOBILE).matches) return;
+        if (!window.matchMedia(STACKED).matches) return;
 
         document.querySelector('.splash-signup')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     });
@@ -184,7 +188,7 @@ const sortedChapters = orderedChapters(await getCollection('chapters'));
         display: none;
     }
 
-    @media (max-width: 1023px) {
+    @media (max-width: $tablet-max) {
         // The landing page's sidebar is the site's cover: a full-height stage
         // whose contents are centered down the screen.
         [data-splash] .sidebar-content {

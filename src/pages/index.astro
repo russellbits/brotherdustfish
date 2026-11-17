@@ -60,7 +60,7 @@ const firstChapter = orderedChapters(await getCollection('chapters'))[0];
             // same screen. Above 1024px there is no splash, and this is the only
             // copy. The two cannot be merged into one instance because they live
             // in different containers.
-            @media (max-width: 1023px) {
+            @media (max-width: $tablet-max) {
                 display: none;
             }
         }
@@ -85,7 +85,7 @@ const firstChapter = orderedChapters(await getCollection('chapters'))[0];
             }
         }
 
-        @media (max-width: 1023px) {
+        @media (max-width: $tablet-max) {
             // The horizontal gutter belongs to .main-content on mobile; keeping
             // this block's own side padding would double it.
             padding: 1.5rem 0;

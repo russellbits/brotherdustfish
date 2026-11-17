@@ -23,7 +23,7 @@ article {
         text-transform: uppercase;
         margin: 6rem 1rem 1rem 1rem;
 
-        @media (max-width: 1023px) {
+        @media (max-width: $tablet-max) {
             // Was 6rem all the way down, which pushed the chapter number most of
             // a screen below the cover art on a phone.
             margin: 1rem;

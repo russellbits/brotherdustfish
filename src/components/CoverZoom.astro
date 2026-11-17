@@ -5,6 +5,8 @@
 </div>
 
 <script>
+    import { TABLET_QUERY } from '../lib/breakpoints';
+
     // Both halves of the interaction are delegated from `document` on purpose.
     // The ClientRouter swaps the body without reloading and Astro only runs each
     // module script once, so a listener bound directly to #coverZoom would vanish
@@ -32,7 +34,7 @@
         // scrolls to the sign-up, so opening an overlay of the same image would be a
         // no-op at best.
         if (event.target.closest('#coverTrigger')) {
-            if (window.matchMedia('(max-width: 1023px)').matches) return;
+            if (window.matchMedia(TABLET_QUERY).matches) return;
             setVisible(!isOpen());
             return;
         }
