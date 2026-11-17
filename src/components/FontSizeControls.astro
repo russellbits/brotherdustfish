@@ -1,0 +1,128 @@
+---
+// The text-size buttons.
+//
+// They move one step, store it, and set an attribute on <html>; the actual sizes live
+// in the stylesheet, so this component cannot hold a number the CSS disagrees with.
+// The scale applies to the chapter's body copy and the drop expansions — and to the
+// figures' captions with them — but deliberately never to headings.
+---
+
+<div class="font-size-controls">
+    <button
+        type="button"
+        class="font-size-button"
+        data-font-scale-step="up"
+        aria-label="Increase text size"
+        title="Increase text size">A+</button
+    >
+    <button
+        type="button"
+        class="font-size-button"
+        data-font-scale-step="down"
+        aria-label="Decrease text size"
+        title="Decrease text size">A−</button
+    >
+</div>
+
+<script>
+    import {
+        DEFAULT_FONT_SCALE_STEP,
+        FONT_SCALE_ATTRIBUTE,
+        isAtLimit,
+        nextFontScale,
+    } from '../lib/font-scale';
+
+    const STORAGE_KEY = 'font-scale';
+
+    function read(): unknown {
+        try {
+            return localStorage.getItem(STORAGE_KEY);
+        } catch {
+            return null;
+        }
+    }
+
+    function sync(step: unknown) {
+        // Both buttons are always in the DOM, so the ends disable themselves rather
+        // than the control vanishing.
+        for (const button of document.querySelectorAll('[data-font-scale-step]')) {
+            const direction = button.getAttribute('data-font-scale-step') === 'up' ? 'up' : 'down';
+
+            (button as HTMLButtonElement).disabled = isAtLimit(step, direction);
+        }
+    }
+
+    function apply(step: unknown) {
+        document.documentElement.setAttribute(
+            FONT_SCALE_ATTRIBUTE,
+            String(step ?? DEFAULT_FONT_SCALE_STEP),
+        );
+        sync(step);
+    }
+
+    // Delegated, and re-applied after every swap: the ClientRouter wipes every
+    // attribute off <html>, so storage is the truth and the attribute is the
+    // rendering — the same arrangement the theme toggle uses.
+    document.addEventListener('click', (event) => {
+        const target = event.target;
+        if (!(target instanceof Element)) return;
+
+        const button = target.closest('[data-font-scale-step]');
+        if (!button) return;
+
+        const up = button.getAttribute('data-font-scale-step') === 'up';
+        const next = nextFontScale(read(), up ? 'up' : 'down');
+
+        try {
+            localStorage.setItem(STORAGE_KEY, next);
+        } catch {}
+
+        apply(next);
+    });
+
+    document.addEventListener('astro:after-swap', () => apply(read()));
+
+    apply(read());
+</script>
+
+<style lang="scss">
+    .font-size-controls {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    // Sized to match the sidebar's show/hide button: the site's other round chrome.
+    .font-size-button {
+        display: grid;
+        place-items: center;
+        width: 34px;
+        height: 34px;
+        padding: 0;
+        border: 1px solid var(--toggle-border);
+        border-radius: 999px;
+        background: var(--toggle-bg);
+        color: var(--toggle-knob);
+        font-family: 'Georgia', serif;
+        font-size: 0.8rem;
+        font-weight: 700;
+        line-height: 1;
+        cursor: pointer;
+        box-shadow: 0 2px 12px rgba(0, 0, 0, 0.12);
+        -webkit-tap-highlight-color: transparent;
+        transition:
+            background-color 0.4s ease,
+            border-color 0.4s ease,
+            color 0.4s ease;
+
+        &:focus-visible {
+            outline: 2px solid var(--accent-color);
+            outline-offset: 3px;
+        }
+
+        &:disabled {
+            opacity: 0.35;
+            cursor: default;
+        }
+    }
+</style>

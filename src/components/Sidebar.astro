@@ -234,7 +234,9 @@ const sortedChapters = orderedChapters(await getCollection('chapters'));
             width: 100%;
             // The stage's own vertical padding, so a full-height cover still fits
             // inside one screen.
-            height: calc(100dvh - 3rem);
+            // Minus the contents strip as well as the stage's own padding, so the strip
+            // never sits over the artwork — the cover's author line is at its top left.
+            height: calc(100dvh - 3rem - var(--toc-bar));
         }
 
         .cover-trigger picture {
@@ -280,21 +282,64 @@ const sortedChapters = orderedChapters(await getCollection('chapters'));
             display: none;
         }
 
+        // A black strip across the top of the screen whose panel folds down *over* the
+        // page: it is fixed, so opening it cannot move the article underneath. Choosing
+        // a chapter closes it again — the tap handler already does that, and scrolls to
+        // the content.
         .toc-disclosure {
             display: block;
-            width: 100%;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1050;
+            background: #000;
+            color: var(--text-color-light);
             text-align: left;
+            max-height: 100dvh;
+            overflow-y: auto;
 
             summary {
+                display: flex;
+                align-items: center;
+                gap: 0.5rem;
+                min-height: var(--toc-bar);
+                padding: 0 1.25rem;
                 font-family: 'Georgia', serif;
-                font-size: 1.3rem;
+                font-size: 1.05rem;
                 color: var(--text-color-light);
                 cursor: pointer;
-                padding: 0.6rem 0;
+                // The engine-drawn triangle sits differently in every browser; the caret
+                // below replaces it.
+                list-style: none;
+
+                &::-webkit-details-marker {
+                    display: none;
+                }
+
+                &::after {
+                    content: '▾';
+                    margin-left: auto;
+                    transition: transform 0.2s ease;
+                }
+            }
+
+            &[open] {
+                padding-bottom: 1.25rem;
             }
 
             &[open] summary {
-                margin-bottom: 1rem;
+                border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+
+                &::after {
+                    transform: rotate(180deg);
+                }
+            }
+
+            // The list is rendered by TocList, so its own styles carry a different
+            // scope: this has to reach outside this component to inset it.
+            :global(.toc-list) {
+                padding: 0 1.25rem;
             }
         }
     }

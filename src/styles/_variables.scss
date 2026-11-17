@@ -45,3 +45,33 @@ $transition-speed: 0.5s;
 
     background-color: var(--bg-color);
 }
+
+// The black contents strip on stacked layouts. One value: the strip's height also
+// offsets the page controls below it and shortens the cover's box, so those three
+// cannot disagree.
+:root {
+    --toc-bar: 3rem;
+
+    // The reading scale the text-size buttons move through. It multiplies the chapter's
+    // body copy and the drop expansions — captions included, since they inherit — and
+    // deliberately nothing else: headings do not resize.
+    --reading-scale: 1;
+}
+
+// The sizes live here rather than in JS, so the attribute a reader's browser carries
+// and the size it renders can never disagree. `m` is the default and needs no rule.
+:root[data-font-scale='xs'] {
+    --reading-scale: 0.875;
+}
+
+:root[data-font-scale='s'] {
+    --reading-scale: 0.9375;
+}
+
+:root[data-font-scale='l'] {
+    --reading-scale: 1.125;
+}
+
+:root[data-font-scale='xl'] {
+    --reading-scale: 1.375;
+}

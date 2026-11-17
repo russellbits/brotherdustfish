@@ -100,7 +100,16 @@ a.hx-link.expanded {
     background: var(--expansion-bg);
     border-top: 1px solid var(--expansion-border);
     border-bottom: 1px solid var(--expansion-border);
-    font-size: 0.97em;
+    // The one wrapper that needs the reader's text-size step. It is inserted after the
+    // whole paragraph, so its parent is the article — unscaled, a fixed 16px — and
+    // without this it would shrink relative to the prose as the reader enlarges it.
+    //
+    // The inline and sentence wrappers deliberately do *not* carry it: they are inserted
+    // inside the <p>, so their em sizes are already relative to the scaled paragraph and
+    // multiplying again would grow them twice as fast as the text they gloss. Everything
+    // inside a paragraph expansion — the caption, the pre at 0.85em, nested paragraphs —
+    // inherits this and needs nothing of its own.
+    font-size: calc(0.97em * var(--reading-scale));
     color: var(--expansion-text-strong);
 }
 

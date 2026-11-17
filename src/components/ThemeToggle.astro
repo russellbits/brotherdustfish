@@ -107,11 +107,9 @@
 </script>
 
 <style lang="scss">
+    // Positioning belongs to `.page-controls`, the column this sits in alongside the
+    // text-size buttons; this element only draws itself.
     .theme-toggle {
-        position: fixed;
-        top: 20px;
-        right: 20px;
-        z-index: 1100;
         width: 64px;
         height: 34px;
         padding: 0;
@@ -199,14 +197,12 @@
     }
     @media (max-width: $tablet-max) {
         .theme-toggle {
-            // Half the visual size, anchored to the same corner. A transform
-            // rather than a smaller box, deliberately: the element's hit area
-            // stays 64x34, because a literal 32x17 target is well under the ~44px
-            // touch guidance and would be fiddly to hit on a phone.
-            transform: scale(0.5);
+            // Two thirds of the desktop size — a third larger than the half it was,
+            // since half put a 32x17 control on a phone. A transform rather than a
+            // smaller box, deliberately: the hit area stays 64x34, which is what
+            // keeps a control this small comfortable to hit.
+            transform: scale(0.667);
             transform-origin: top right;
-            top: 14px;
-            right: 14px;
         }
     }
 </style>

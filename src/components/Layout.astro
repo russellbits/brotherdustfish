@@ -2,6 +2,7 @@
 import Sidebar from './Sidebar.astro';
 import CoverZoom from './CoverZoom.astro';
 import ThemeToggle from './ThemeToggle.astro';
+import FontSizeControls from './FontSizeControls.astro';
 import { ClientRouter } from 'astro:transitions';
 import '../styles/main.scss';
 
@@ -76,7 +77,12 @@ const { title = "Brother Dustfish", splash = false } = Astro.props;
             <slot />
         </main>
         <CoverZoom />
-        <ThemeToggle />
+        <!-- One fixed column: the theme switch, then the text-size pair beneath it.
+             The column owns the positioning, so the two cannot drift apart. -->
+        <div class="page-controls">
+            <ThemeToggle />
+            <FontSizeControls />
+        </div>
         <script>
             // Delegate from document so the toggle keeps working after
             // ClientRouter swaps the page body (module scripts run only once).

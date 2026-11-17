@@ -209,6 +209,53 @@ test('the chapter page loads that stylesheet', { skip }, () => {
   assert.match(html(), /href="\/_astro\/Layout\.[^"]+\.css"/);
 });
 
+// ── page chrome ──────────────────────────────────────────────────────────────
+
+test('the text-size controls are on every page', { skip }, () => {
+  for (const attribute of ['data-font-scale-step="up"', 'data-font-scale-step="down"']) {
+    assert.ok(html().includes(attribute), `missing ${attribute}`);
+  }
+});
+
+// The steps are declared in CSS so the attribute a browser carries and the size it
+// renders cannot disagree — JS only names the step.
+test('the reading-scale steps live in CSS', { skip }, () => {
+  const css = stylesheet();
+
+  for (const step of ['xs', 's', 'l', 'xl']) {
+    assert.ok(css.includes(`data-font-scale=${step}`), `no rule for the ${step} step`);
+  }
+
+  // Carried by the reading text and the paragraph expansions only: the inline and
+  // sentence wrappers sit inside a scaled paragraph, so they inherit it. Neither
+  // selector carries a scope attribute — both live in global partials — so these
+  // patterns must not demand one.
+  assert.match(css, /article p\{[^}]*var\(--reading-scale\)/);
+  assert.match(css, /\.expansion-paragraph\{[^}]*var\(--reading-scale\)/);
+});
+
+test('the mobile contents strip is black, fixed, and sized by the one token', { skip }, () => {
+  const css = stylesheet();
+
+  assert.match(css, /--toc-bar:3rem/);
+  // Only the stacked rule carries these, so each matches the strip rather than the
+  // desktop `display: none` above it.
+  assert.match(css, /\.toc-disclosure[^{]*\{[^}]*background:#000/);
+  assert.match(css, /\.toc-disclosure[^{]*\{[^}]*position:fixed/);
+
+  // One value with three users: the strip's height, the controls' offset below it,
+  // and the cover's box.
+  const users = (css.match(/var\(--toc-bar\)/g) ?? []).length;
+  assert.ok(users >= 3, `--toc-bar is used by ${users} rules, expected at least 3`);
+});
+
+test('the toggle is two thirds scale on a stacked layout, and the font buttons match the nav button', { skip }, () => {
+  const css = stylesheet();
+
+  assert.match(css, /transform:scale\(\.667\)/);
+  assert.match(css, /\.font-size-button\[[^\]]*\]\{[^}]*width:34px;height:34px/);
+});
+
 // A drop image is narrower than the reading column, so with no rules the frame
 // stretches to the column and strands the picture at its left edge, and below the
 // picture's own width the picture overflows the column entirely.

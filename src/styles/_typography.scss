@@ -57,7 +57,9 @@ article {
         // 17px absolute floor. The previous clamp(0.5rem, 5vw, 1rem) had an 8px
         // floor and did not reach its 16px ceiling until a 320px viewport, so it
         // resolved to a flat 16px at every width — the clamp never engaged.
-        font-size: clamp(1.0625rem, 1rem + 0.35vw, 1.2rem);
+        // Multiplied by the reader's text-size step. Only this and the drop
+        // expansions carry `--reading-scale`: headings are deliberately left alone.
+        font-size: calc(clamp(1.0625rem, 1rem + 0.35vw, 1.2rem) * var(--reading-scale));
         // Unitless, so leading tracks the type size instead of fighting it. The same
         // 5vw that sized the old text also drove its line-height, pinning a phone to
         // 1.22 — dense-UI leading, not prose leading. 1.5-1.6 is the comfortable

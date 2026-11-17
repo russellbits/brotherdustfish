@@ -48,6 +48,25 @@
     view-transition-name: chapter-content;
 }
 
+// The fixed column holding the theme switch and the text-size pair. It owns the
+// positioning so the two cannot drift apart.
+.page-controls {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 1100;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 10px;
+
+    @media (max-width: $tablet-max) {
+        // Below the black contents strip, which owns the very top of the screen.
+        top: calc(var(--toc-bar) + 12px);
+        right: 12px;
+    }
+}
+
 .nav-toggle {
     position: fixed;
     top: 20px;
