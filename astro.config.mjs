@@ -4,6 +4,11 @@ import { satteri } from '@astrojs/markdown-satteri';
 import { chapterAnchors } from './src/plugins/chapter-anchors.ts';
 
 export default defineConfig({
+  site: 'https://www.brotherdustfish.com',
+  server: {
+    port: 21815,
+  },
+  outDir: './build',
   integrations: [mdx()],
 
   markdown: {
