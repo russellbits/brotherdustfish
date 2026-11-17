@@ -1,0 +1,66 @@
+/* ==========================================================================
+   1. MOBILE STYLES (Default / Base)
+   ========================================================================== */
+/* These styles apply to ALL devices by default (phones, tablets, desktops).
+   Keep your layout single-column here. */
+body {
+  font-size: 16px;
+  padding: 15px;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  overflow: auto;
+  background-image: url(images/the-archelux-no-edge.jpg);
+}
+
+/* ==========================================================================
+   2. TABLET STYLES (768px and up)
+   ========================================================================== */
+@media screen and (min-width: 768px) {
+  /* Style adjustments for iPads and medium-sized tablets */
+  body {
+    font-size: 16px;
+    padding: 15px;
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-image: url(images/the-archelux-no-edge.jpg);
+  }
+}
+
+
+/* ==========================================================================
+   3. DESKTOP STYLES (1024px and up)
+   ========================================================================== */
+@media screen and (min-width: 1024px) {
+  /* Style adjustments for laptops and standard desktop screens */
+  body {
+    font-size: 18px;
+    display: flex;
+    flex-direction: row;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background-image: url(images/the-archelux-no-edge.jpg);
+  }
+}
+
+
+/* ==========================================================================
+   4. LARGE DESKTOP STYLES (Optional: 1440px and up)
+   ========================================================================== */
+@media screen and (min-width: 1440px) {
+    body {
+        font-size: 20px;
+        display: flex;
+        flex-direction: row;
+        width: 80%;
+        height: 100%;
+        margin: 0 auto;
+        overflow: hidden;
+        background-image: url(images/the-archelux-no-edge.jpg);
+    }
+}
