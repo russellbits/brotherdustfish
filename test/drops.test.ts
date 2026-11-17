@@ -22,5 +22,5 @@ test('expansionDomId never contains a slash', () => {
 });
 
 test('dropHref is the route shape', () => {
-  assert.equal(dropHref('01-meet-able', 'p1s1l1'), '/drops/01-meet-able/p1s1l1/');
+  assert.equal(dropHref('01-meet-able', 'p1s1l1'), '/drops/01-meet-able/p1s1l1.html');
 });

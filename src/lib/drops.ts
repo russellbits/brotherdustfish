@@ -116,7 +116,12 @@ export function expansionDomId(name: string): string {
  * deployed under a subpath.
  */
 export function dropHref(chapterId: string, slug: string): string {
-    return `${BASE_PREFIX}/drops/${chapterId}/${slug}/`;
+    // Ends in `.html` because the fragment route is an endpoint, and an endpoint
+    // emitting `index.html` needs a page route — which Astro prepends a doctype
+    // to, so it cannot emit a bare fragment. A real .html file is also the only
+    // form every static host will serve as text/html; an extensionless file gets
+    // guessed at, and a bare path with a trailing slash is not produced at all.
+    return `${BASE_PREFIX}/drops/${chapterId}/${slug}.html`;
 }
 
 /**
