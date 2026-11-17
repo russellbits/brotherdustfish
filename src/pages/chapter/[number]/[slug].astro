@@ -4,6 +4,8 @@ import Layout from '../../../components/Layout.astro';
 import ChapterNav from '../../../components/ChapterNav.astro';
 import LifeBreaks from '../../../components/LifeBreaks.astro';
 import { chapterParts, type Chapter } from '../../../lib/chapters';
+import { duplicateDropReferences } from '../../../lib/drop-references';
+import Drop from '../../../components/Drop.astro';
 
 // Chapters that ship `images/chapter-image.png` get that art rendered at the top
 // of the page. Resolved by Vite at build time, so each image is bundled and
@@ -42,6 +44,18 @@ export async function getStaticPaths() {
 const { chapter } = Astro.props;
 const { Content } = await render(chapter);
 const chapterImage = imagesByFolder.get(chapter.id);
+
+// Review Focus 2: two links sharing a slug would emit two elements with the same
+// DOM id and two requests for one fragment. Checked here rather than inside
+// <Drop> so it is stateless, and runs once per chapter render.
+const duplicates = duplicateDropReferences([{ id: chapter.id, body: chapter.body }]);
+
+if (duplicates.length > 0) {
+    throw new Error(
+        `${chapter.id}/chapter.mdx references ${duplicates.join(', ')} more than once. ` +
+            `Each slug must appear once, so that every link id is unique.`,
+    );
+}
 ---
 
 <Layout title={`${chapter.data.title} — Brother Dustfish`}>
@@ -59,7 +73,7 @@ const chapterImage = imagesByFolder.get(chapter.id);
             <h4>{chapter.data.summary}</h4>
         </div>
         <div class="chapter-body">
-            <Content />
+            <Content components={{ Drop }} />
         </div>
         <ChapterNav currentNumber={chapter.data.number} />
     </article>

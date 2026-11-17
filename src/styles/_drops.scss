@@ -1,0 +1,364 @@
+// Expansion styling: a drop's link, its fragment, and the reveal animations.
+//
+// Ported from `the-hyperarticle/house.css`, the reference implementation, with two
+// deliberate differences, both recorded in the spec's CSS section:
+//
+// 1. The reference's custom properties do not exist in this project, so each is
+//    mapped onto the token carrying the same meaning here. Otherwise the rules are
+//    unchanged, and `--expansion-bg` / `--expansion-border` keep the reference
+//    values (#eee8d8 / #b8a98a), which read as a warm beige on the parchment pane.
+// 2. The reference is light-only; this site has a dark theme, and its literal text
+//    colours (#4a3e2a and friends) would be near-invisible on a dark pane. Those
+//    literals become tokens holding the reference values in light mode.
+//
+// These rules MUST be global. A scoped component style compiles to
+// `.expansion-inline[data-astro-cid-…]`, and a fetched fragment never carries that
+// attribute, so every expansion would silently render unstyled.
+//
+// The font stack is repeated locally rather than imported from _variables.scss:
+// that partial also emits :root blocks, so importing it here would duplicate them.
+
+$drops-font: Georgia, 'Times New Roman', serif;
+
+:root {
+    // Reference values, unchanged.
+    --expansion-bg: #eee8d8;
+    --expansion-border: #b8a98a;
+
+    // The reference's tokens, mapped onto this project's equivalents.
+    --expansion-paper: var(--pane-base); // house.css --paper
+    --expansion-paper-dark: #e3c392; // house.css --paper-dark
+    --expansion-rule: var(--border-color); // house.css --rule
+    --expansion-accent: var(--accent-color); // house.css --accent
+    --expansion-accent-light: var(--sidebar-link-hover); // house.css --accent-light
+
+    // The reference's literal text colours, tokenised so the dark theme can differ.
+    --expansion-text: #4a3e2a;
+    --expansion-text-strong: #3a3020;
+    --expansion-text-muted: #7a6e5a;
+}
+
+:root[data-theme='dark'] {
+    --expansion-bg: #24282f;
+    --expansion-border: #3f4650;
+    --expansion-paper-dark: #1b1f24;
+    --expansion-text: #ded8ca;
+    --expansion-text-strong: #e8e4da;
+    --expansion-text-muted: #9a9384;
+}
+
+// ── the link ─────────────────────────────────────────────────────────────────
+
+a.hx-link {
+    color: var(--expansion-accent);
+    text-decoration: underline;
+    text-decoration-style: solid;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 3px;
+    cursor: pointer;
+    transition: color 0.15s;
+}
+
+a.hx-link:hover {
+    color: var(--expansion-accent-light);
+}
+
+a.hx-link.expanded {
+    text-decoration-style: dotted;
+}
+
+// ── the fragments ────────────────────────────────────────────────────────────
+
+.expansion-inline {
+    display: inline;
+    margin-left: 0.1em;
+    padding: 0.05em 0.4em;
+    background: var(--expansion-bg);
+    border: 1px solid var(--expansion-border);
+    border-radius: 2px;
+    font-size: 0.92em;
+    font-style: italic;
+    color: var(--expansion-text);
+    line-height: inherit;
+}
+
+.expansion-sentence {
+    display: block;
+    margin: 0.3em 0 0.3em 1.5em;
+    padding-left: 0.8em;
+    border-left: 2px solid var(--expansion-border);
+    font-size: 0.95em;
+    color: var(--expansion-text-strong);
+    font-style: italic;
+}
+
+.expansion-paragraph {
+    display: block;
+    margin-top: 1.2em;
+    padding: 1em 1.2em;
+    background: var(--expansion-bg);
+    border-top: 1px solid var(--expansion-border);
+    border-bottom: 1px solid var(--expansion-border);
+    font-size: 0.97em;
+    color: var(--expansion-text-strong);
+}
+
+.expansion-paragraph::before {
+    content: '↳ ';
+    color: var(--expansion-accent);
+}
+
+// A drop's body is Markdown, so a paragraph expansion can arrive with several
+// blocks in it. Keep the vertical rhythm tighter than the article's own paragraphs
+// and drop the trailing gap on the last block.
+.expansion-paragraph p {
+    margin-bottom: 0.9em;
+}
+
+.expansion-paragraph p:last-child,
+.expansion-paragraph ul:last-child,
+.expansion-paragraph ol:last-child,
+.expansion-paragraph pre:last-child,
+.expansion-paragraph blockquote:last-child {
+    margin-bottom: 0;
+}
+
+.expansion-paragraph ul,
+.expansion-paragraph ol {
+    margin: 0.7em 0 0.9em 1.5em;
+    list-style-position: outside;
+}
+
+.expansion-paragraph ul {
+    list-style: disc;
+}
+
+.expansion-paragraph ol {
+    list-style: decimal;
+}
+
+.expansion-paragraph li {
+    margin-bottom: 0.3em;
+}
+
+.expansion-paragraph h2,
+.expansion-paragraph h3,
+.expansion-paragraph h4 {
+    font-family: $drops-font;
+    font-size: 1.05rem;
+    font-weight: 700;
+    margin: 1.1em 0 0.4em;
+}
+
+.expansion-paragraph blockquote {
+    margin: 0.9em 0;
+    padding-left: 0.9em;
+    border-left: 2px solid var(--expansion-rule);
+    font-style: italic;
+    color: var(--expansion-text);
+}
+
+.expansion-paragraph pre {
+    margin: 0.9em 0;
+    padding: 0.7em 0.9em;
+    background: var(--expansion-paper);
+    border: 1px solid var(--expansion-rule);
+    border-radius: 2px;
+    overflow-x: auto;
+    font-size: 0.85em;
+    line-height: 1.5;
+}
+
+.expansion-paragraph pre code {
+    background: none;
+    padding: 0;
+    font-size: 1em;
+}
+
+.expansion-paragraph hr {
+    margin: 1.1em 0;
+    border: 0;
+    border-top: 1px solid var(--expansion-rule);
+}
+
+// A link whose drop file does not exist yet: visible, not silent.
+.expansion-missing {
+    display: inline;
+    margin-left: 0.1em;
+    padding: 0.05em 0.4em;
+    background: repeating-linear-gradient(
+        45deg,
+        var(--expansion-paper-dark),
+        var(--expansion-paper-dark) 6px,
+        var(--expansion-bg) 6px,
+        var(--expansion-bg) 12px
+    );
+    border: 1px dashed var(--expansion-border);
+    border-radius: 2px;
+    font-size: 0.85em;
+    font-style: italic;
+    color: var(--expansion-text-muted);
+}
+
+// ── the indicator, and the two reveals ───────────────────────────────────────
+
+.htmx-indicator {
+    display: none;
+    font-size: 0.75em;
+    color: var(--expansion-accent);
+    margin-left: 0.3em;
+    vertical-align: middle;
+    animation: pulse 1s infinite;
+}
+
+.htmx-request .htmx-indicator {
+    display: inline;
+}
+
+@keyframes pulse {
+    0%,
+    100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.3;
+    }
+}
+
+.word {
+    display: inline;
+    opacity: 0;
+    animation: word-appear 0.15s ease forwards;
+}
+
+@keyframes word-appear {
+    from {
+        opacity: 0;
+        transform: translateY(3px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.collapsing {
+    animation: fade-out 0.3s ease forwards;
+    pointer-events: none;
+}
+
+@keyframes fade-out {
+    from {
+        opacity: 1;
+    }
+    to {
+        opacity: 0;
+    }
+}
+
+.expansion-inline .word,
+.expansion-sentence .word,
+.expansion-paragraph .word {
+    display: inline;
+}
+
+// An image drop fades in whole rather than having its caption tokenised into
+// `.word` spans and typed out. The browser is told which by `data-drop-reveal`.
+.expansion-fade {
+    animation: expansion-fade-in 0.4s ease forwards;
+}
+
+@keyframes expansion-fade-in {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .expansion-fade,
+    .word,
+    .htmx-indicator {
+        animation: none;
+    }
+
+    // `.word` starts at opacity 0 and relies on its animation to become visible,
+    // so removing the animation would leave the text invisible.
+    .word {
+        opacity: 1;
+    }
+
+    // Not `animation: none`: the client removes a collapsed node on `animationend`,
+    // so disabling the animation outright would leave it in the document forever.
+    // A near-instant duration keeps the removal working while showing no motion.
+    .collapsing {
+        animation-duration: 0.01s;
+    }
+}
+
+// ── tooltips (pure CSS, no JS) ───────────────────────────────────────────────
+
+[data-tooltip] {
+    position: relative;
+    cursor: help;
+    text-decoration: underline;
+    text-decoration-style: dotted;
+    text-decoration-color: var(--expansion-rule);
+    text-underline-offset: 3px;
+}
+
+[data-tooltip]::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    top: calc(100% + 6px);
+    left: 50%;
+    transform: translateX(-50%);
+    width: max-content;
+    max-width: 260px;
+    padding: 0.45em 0.7em;
+    background: var(--expansion-paper-dark);
+    border: 1px solid var(--expansion-border);
+    border-radius: 2px;
+    font-family: $drops-font;
+    font-size: 0.78rem;
+    font-style: italic;
+    font-weight: 300;
+    color: var(--expansion-text);
+    line-height: 1.5;
+    white-space: normal;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.15s ease;
+    z-index: 10;
+}
+
+[data-tooltip]::before {
+    content: '';
+    position: absolute;
+    top: calc(100% + 1px);
+    left: 50%;
+    transform: translateX(-50%);
+    border: 5px solid transparent;
+    border-bottom-color: var(--expansion-border);
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.15s ease;
+    z-index: 11;
+}
+
+[data-tooltip]:hover::after,
+[data-tooltip]:hover::before,
+[data-tooltip]:focus::after,
+[data-tooltip]:focus::before {
+    opacity: 1;
+}
+
+// The reference set `overflow: visible` globally to stop an ancestor clipping a
+// tooltip. Scoped here to the chapter body, which is where drops and their
+// tooltips live.
+.chapter-body p,
+.chapter-body h2 {
+    overflow: visible;
+}

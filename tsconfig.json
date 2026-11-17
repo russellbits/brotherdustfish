@@ -1,13 +1,8 @@
 {
+  "extends": "astro/tsconfigs/strict",
   "compilerOptions": {
-    "target": "ESNext",
-    "module": "ESNext",
-    "moduleResolution": "bundler",
-    "allowJs": true,
     "checkJs": true,
-    "jsx": "preserve",
     "jsxImportSource": "astro",
-    "strict": true,
     "baseUrl": ".",
     "paths": {
       "@components/*": ["src/components/*"],
@@ -15,5 +10,10 @@
       "@pages/*": ["src/pages/*"],
       "@styles/*": ["src/styles/*"]
     }
-  }
+  },
+  // Deliberately NOT excluding .astro: astro/tsconfigs/strict includes
+  // .astro/types.d.ts, which supplies the ImportMetaEnv types that dropHref's
+  // `import.meta.env?.BASE_URL` relies on. Excluding it would untype that
+  // expression and fail `astro check`.
+  "exclude": ["dist", "node_modules", "the-hyperarticle", "stylesheets", "script.js", ".superpowers"]
 }

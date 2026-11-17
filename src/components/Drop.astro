@@ -1,0 +1,70 @@
+---
+import { getEntry } from 'astro:content';
+import { dropHref, expansionDomId, expansionTarget, normaliseTerm, parseDropSlug } from '../lib/drops';
+
+interface Props {
+    /**
+     * The chapter's collection id, e.g. `01-meet-able`.
+     *
+     * This is explicit rather than inferred on purpose. The chapter route cannot
+     * bind it into the component: MDX resolves `Drop` from the `components` prop,
+     * but a closure introduced there is not a renderer-recognised component and
+     * fails with NoMatchingRenderer. Inferring it from Astro.url would be
+     * silently wrong in a preview, a listing or a feed, and the failure it causes
+     * — a drop pointing at the wrong chapter — is the worst one this system has.
+     *
+     * A wrong value here degrades to the visible "no drop at …" placeholder
+     * naming the path it looked for, which is the designed authoring signal.
+     */
+    chapter: string;
+    slug: string;
+}
+
+const { chapter, slug } = Astro.props;
+
+const coords = parseDropSlug(slug);
+
+// Review Focus 1: a mnemonic where coordinates belong is an authoring mistake and
+// must be loud. Without this the link would carry no usable coordinates and the
+// mode's swap target would silently point nowhere.
+if (!coords) {
+    throw new Error(
+        `<Drop slug="${slug}"> in ${chapter}/chapter.mdx: a drop slug is ` +
+            `p<para>s<sent>l<link>, e.g. p1s1l1 — see drops/_template.md.`,
+    );
+}
+
+const entry = await getEntry('drops', `${chapter}/${slug}`);
+const mode = entry?.data.mode ?? 'inline';
+const children = Astro.slots.has('default') ? (await Astro.slots.render('default')).trim() : '';
+
+// D3: the children are the display text and `term` is the machine-readable copy,
+// so a mismatch means one of the two is stale. Compared only after normalising
+// typographic variants, because the children have been through the Markdown
+// pipeline (smart punctuation, HTML escaping) and `term` has not. Skipped when the
+// drop has not been written yet, because the route renders the placeholder then.
+if (children !== '' && entry && normaliseTerm(children) !== normaliseTerm(entry.data.term)) {
+    throw new Error(
+        `<Drop slug="${slug}"> in ${chapter}/chapter.mdx reads "${children}" but ` +
+            `drops/${chapter}/${slug}.md declares term: ${JSON.stringify(entry.data.term)}. ` +
+            `The two must match.`,
+    );
+}
+
+// Falling back to `term` keeps `<Drop chapter="…" slug="…" />` usable on its own.
+const label = children !== '' ? children : (entry?.data.term ?? slug);
+const href = dropHref(chapter, slug);
+---
+
+<a id={slug} class="hx-link" href={href} hx-get={href}
+    hx-target={expansionTarget(mode, coords)} hx-swap="afterend"
+    hx-indicator={`#ind-${slug}`}
+    data-drop-term={entry?.data.term}
+    data-drop-para={String(coords.para)}
+    data-drop-sent={String(coords.sent)}
+    data-drop-link={String(coords.link)}
+    data-drop-mode={mode}
+    data-astro-prefetch="false"
+    data-astro-reload
+    onclick={`handleToggle(event,'${expansionDomId(slug)}')`}>{label}</a><span
+    class="htmx-indicator" id={`ind-${slug}`}>…</span>
