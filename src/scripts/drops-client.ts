@@ -18,6 +18,10 @@
 
 const WORD_DELAY_MS = 60;
 
+/** Slightly longer than the collapse animation, so the fallback only ever fires if
+ * no animation did — see the note in collapseExpansion. */
+const COLLAPSE_FALLBACK_MS = 400;
+
 /** The least an element must offer for this module's decisions. Structural, so it is testable without a DOM. */
 export interface RevealElement {
     id: string;
@@ -88,15 +92,24 @@ export function revealWordByWord(element: Element): void {
 export function collapseExpansion(element: Element, link: Element, done?: () => void): void {
     element.classList.add('collapsing');
 
-    element.addEventListener(
-        'animationend',
-        () => {
-            element.remove();
-            link.classList.remove('expanded');
-            done?.();
-        },
-        { once: true },
-    );
+    let finished = false;
+
+    const finish = () => {
+        if (finished) return;
+        finished = true;
+        element.remove();
+        link.classList.remove('expanded');
+        done?.();
+    };
+
+    element.addEventListener('animationend', finish, { once: true });
+
+    // A fallback, not a nicety: removal must not depend on an animation firing.
+    // An element whose reveal animation has already run keeps that animation-name,
+    // so adding the collapse class can start nothing at all — which is exactly what
+    // happened to image drops and left the figure on screen with no way to dismiss
+    // it. A timeout means the node always goes.
+    window.setTimeout(finish, COLLAPSE_FALLBACK_MS);
 }
 
 /**

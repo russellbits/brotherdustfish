@@ -84,9 +84,10 @@ a.hx-link.expanded {
 
 .expansion-sentence {
     display: block;
-    margin: 0.3em 0 0.3em 1.5em;
-    padding-left: 0.8em;
-    border-left: 2px solid var(--expansion-border);
+    margin: 2em 0 2em 0;
+    padding: 0.5em 0 0.5em 0;
+    border-top: 2px solid var(--expansion-border);
+    border-bottom: 2px solid var(--expansion-border);
     font-size: 0.95em;
     color: var(--expansion-text-strong);
     font-style: italic;
@@ -279,7 +280,13 @@ a.hx-link.expanded {
 }
 
 .collapsing {
-    animation: fade-out 0.3s ease forwards;
+    // `!important` is deliberate rather than lazy: collapsing is a terminal state,
+    // and the animation shorthand is also set by `.expansion-fade` on image drops.
+    // Both are single-class selectors, so whichever appears later in this file wins
+    // — and a spent `expansion-fade-in` winning means adding `.collapsing` starts no
+    // new animation, so no `animationend` fires and the node is never removed. This
+    // has to beat every reveal animation, including any added later.
+    animation: fade-out 0.3s ease forwards !important;
     pointer-events: none;
 }
 
