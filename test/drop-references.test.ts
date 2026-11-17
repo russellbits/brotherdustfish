@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { scanDropReferences } from '../src/lib/drop-references.ts';
+import { duplicateDropReferences, scanDropReferences } from '../src/lib/drop-references.ts';
 
 const chapter = (id: string, body: string) => ({ id, body });
 
@@ -71,4 +71,32 @@ test('a chapter with no retained body contributes nothing rather than throwing',
 test('the same chapter scanned twice yields one id, not two', () => {
   const source = [chapter('01-meet-able', '<Drop slug="p1s1l1">a</Drop> <Drop slug="p1s1l1">b</Drop>')];
   assert.deepEqual([...scanDropReferences(source)], ['01-meet-able/p1s1l1']);
+});
+
+// Review Focus 2. A slug used twice in one chapter would emit two links sharing a
+// DOM id and pointing at one fragment. This is a pure function rather than state
+// inside the <Drop> component on purpose: a module-level seen-set would survive a
+// dev re-render and report a phantom duplicate on the second page load.
+test('a slug used twice in one chapter is reported as a duplicate', () => {
+  const source = [
+    chapter('01-meet-able', '<Drop slug="p1s1l1">a</Drop> <Drop slug="p1s1l1">b</Drop>'),
+  ];
+  assert.deepEqual(duplicateDropReferences(source), ['01-meet-able/p1s1l1']);
+});
+
+test('the same slug in two different chapters is not a duplicate', () => {
+  const source = [
+    chapter('01-meet-able', '<Drop slug="p1s1l1">a</Drop>'),
+    chapter('02-able-is-exiled', '<Drop slug="p1s1l1">a</Drop>'),
+  ];
+  assert.deepEqual(duplicateDropReferences(source), []);
+});
+
+test('a chapter of clean prose yields no duplicates', () => {
+  assert.deepEqual(duplicateDropReferences([chapter('01-meet-able', 'prose')]), []);
+});
+
+test('a duplicate inside a code sample is not reported', () => {
+  const body = '```\n<Drop slug="p1s1l1">a</Drop>\n<Drop slug="p1s1l1">b</Drop>\n```\n';
+  assert.deepEqual(duplicateDropReferences([chapter('01-meet-able', body)]), []);
 });

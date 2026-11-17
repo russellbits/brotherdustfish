@@ -45,17 +45,38 @@ function stripDocumentation(markdown: string): string {
  * render time that its own id is in this set. A miss therefore becomes a build
  * error rather than a silently absent placeholder.
  */
-export function scanDropReferences(chapters: ChapterSource[]): Set<string> {
-    const found = new Set<string>();
+function countReferences(chapters: ChapterSource[]): Map<string, number> {
+    const counts = new Map<string, number>();
 
     for (const chapter of chapters) {
         if (typeof chapter.body !== 'string') continue;
 
         for (const match of stripDocumentation(chapter.body).matchAll(DROP_TAG)) {
             const slug = match[1] ?? match[2];
-            if (slug) found.add(`${chapter.id}/${slug}`);
+            if (!slug) continue;
+
+            const id = `${chapter.id}/${slug}`;
+            counts.set(id, (counts.get(id) ?? 0) + 1);
         }
     }
 
-    return found;
+    return counts;
+}
+
+export function scanDropReferences(chapters: ChapterSource[]): Set<string> {
+    return new Set(countReferences(chapters).keys());
+}
+
+/**
+ * Drop ids a single chapter references more than once.
+ *
+ * Two links sharing a slug would emit two elements with the same DOM id and two
+ * requests for one fragment. Kept pure, and away from the <Drop> component,
+ * because a module-level seen-set there would survive a dev re-render and report
+ * a phantom duplicate on the second page load.
+ */
+export function duplicateDropReferences(chapters: ChapterSource[]): string[] {
+    return [...countReferences(chapters)]
+        .filter(([, count]) => count > 1)
+        .map(([id]) => id);
 }

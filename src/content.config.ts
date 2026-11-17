@@ -34,7 +34,12 @@ const drops = defineCollection({
   loader: glob({
     pattern: '**/drops/[!_]*.md',
     base: './src/content/chapters',
-    generateId: ({ entry }) => entry.replace(/\/drops\/([^/]+)\.md$/, '$1'),
+  // Both capture groups are needed. The source brief's version of this pattern,
+  // `replace(/\/drops\/([^/]+)\.md$/, '$1')`, matches the separator slash before
+  // `drops` and discards it, so `01-meet-able/drops/p1s1l1.md` becomes
+  // `01-meet-ablep1s1l1` — an id no lookup can find, which silently degrades a
+  // drop to inline mode instead of failing.
+  generateId: ({ entry }) => entry.replace(/^(.+)\/drops\/([^/]+)\.md$/, '$1/$2'),
   }),
   schema: dropsSchema,
 });

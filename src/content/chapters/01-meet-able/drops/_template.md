@@ -24,6 +24,25 @@ So `p1s1l1.md` is the first drop link in the first sentence of the first
 paragraph. The chapter folder namespaces it: the drop id is
 `01-meet-able/p1s1l1` and it is served at `/drops/01-meet-able/p1s1l1/`.
 
+## Linking to a drop
+
+```mdx
+<Drop chapter="01-meet-able" slug="p1s1l1">Skybow</Drop>
+```
+
+- **`chapter`** — the chapter folder name, e.g. `01-meet-able`. It is written on
+every link rather than inferred. The chapter route cannot bind it into the
+component, because MDX resolves `Drop` from the `components` prop and a closure
+introduced there is not a renderer-recognised component; deriving it from the URL
+would be silently wrong in a preview, a listing or a feed.
+- **`slug`** — the drop's filename without `.md`.
+- **the children** — the visible anchor text, plain text only, and it must equal
+the drop's `term`.
+
+A wrong `chapter` is not silent: the link still renders, and the fragment answers
+with the visible `no drop at drops/<what-you-wrote>.md yet` placeholder naming
+the path it looked for.
+
 A miscounted **para** is visible rather than silent — `sentence` and `paragraph`
 drops swap in at `#p<para>s<sent>` and `#p<para>`, so they land in the wrong
 place. A miscounted **sent** or **link** only spoils the coordinates a future
