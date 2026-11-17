@@ -1,6 +1,6 @@
 ---
 import { getEntry } from 'astro:content';
-import { dropHref, expansionDomId, expansionTarget, parseDropSlug } from '../lib/drops';
+import { dropHref, expansionDomId, expansionTarget, normaliseTerm, parseDropSlug } from '../lib/drops';
 
 interface Props {
     /**
@@ -39,9 +39,11 @@ const mode = entry?.data.mode ?? 'inline';
 const children = Astro.slots.has('default') ? (await Astro.slots.render('default')).trim() : '';
 
 // D3: the children are the display text and `term` is the machine-readable copy,
-// so a mismatch means one of the two is stale. Skipped when the drop has not been
-// written yet, because the route renders the placeholder then.
-if (children !== '' && entry && children !== entry.data.term) {
+// so a mismatch means one of the two is stale. Compared only after normalising
+// typographic variants, because the children have been through the Markdown
+// pipeline (smart punctuation, HTML escaping) and `term` has not. Skipped when the
+// drop has not been written yet, because the route renders the placeholder then.
+if (children !== '' && entry && normaliseTerm(children) !== normaliseTerm(entry.data.term)) {
     throw new Error(
         `<Drop slug="${slug}"> in ${chapter}/chapter.mdx reads "${children}" but ` +
             `drops/${chapter}/${slug}.md declares term: ${JSON.stringify(entry.data.term)}. ` +

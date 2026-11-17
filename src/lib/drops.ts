@@ -141,6 +141,56 @@ export function expansionTarget(mode: DropMode, coords: DropCoords): string {
     }
 }
 
+const NAMED_ENTITIES: Record<string, string> = {
+    amp: '&',
+    lt: '<',
+    gt: '>',
+    quot: '"',
+    apos: "'",
+    nbsp: ' ',
+    '#39': "'",
+    '#x27': "'",
+};
+
+function decodeEntities(text: string): string {
+    return text.replace(/&(#x?[0-9a-fA-F]+|[a-zA-Z]+);/g, (whole: string, body: string) => {
+        const named = NAMED_ENTITIES[body.toLowerCase()];
+        if (named !== undefined) return named;
+
+        if (body.startsWith('#')) {
+            const hexadecimal = body[1] === 'x' || body[1] === 'X';
+            const code = hexadecimal ? parseInt(body.slice(2), 16) : parseInt(body.slice(1), 10);
+
+            return Number.isFinite(code) ? String.fromCodePoint(code) : whole;
+        }
+
+        return whole;
+    });
+}
+
+/**
+ * Make a rendered term comparable with a front-matter one.
+ *
+ * The two arrive from different pipelines. `term` is raw YAML text, while a
+ * <Drop>'s children have been through Astro's Markdown processor, where Sätteri's
+ * smartPunctuation is on by default and HTML is escaped. So a straight apostrophe
+ * comes back curly and an ampersand comes back as `&amp;`, and comparing the raw
+ * strings fails the build over a difference nobody can see — a build error whose
+ * two strings look identical.
+ *
+ * Normalising only typographic variants, so a genuinely different term still
+ * fails the comparison.
+ */
+export function normaliseTerm(text: string): string {
+    return decodeEntities(text)
+        .replace(/[\u2018\u2019\u02BC]/g, "'")
+        .replace(/[\u201C\u201D]/g, '"')
+        .replace(/\u2026/g, '...')
+        .replace(/[\u2013\u2014]/g, '-')
+        .replace(/\s+/g, ' ')
+        .trim();
+}
+
 /**
  * Whether a rendered body should fade in rather than run the word-by-word
  * reveal. The decision is made here, at build time, and travels to the client as
