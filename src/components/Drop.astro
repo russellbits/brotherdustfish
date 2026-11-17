@@ -64,6 +64,5 @@ const href = dropHref(chapter, slug);
     data-drop-mode={mode}
     data-astro-prefetch="false"
     data-astro-reload
-    onclick={`handleToggle(event,'${expansionDomId(slug)}')`}
-    {...{ 'hx-on:htmx:after-swap': 'handleReveal(event)' }}>{label}</a><span
+    onclick={`handleToggle(event,'${expansionDomId(slug)}')`}>{label}</a><span
     class="htmx-indicator" id={`ind-${slug}`}>…</span>

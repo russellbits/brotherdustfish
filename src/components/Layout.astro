@@ -30,6 +30,15 @@ const { title = "Brother Dustfish" } = Astro.props;
             })();
         </script>
         <ClientRouter />
+        <script>
+            // Bundled rather than pulled from a CDN, so Astro dedupes it and the
+            // script keeps working if security.csp is ever enabled. The reveal
+            // listener inside drops-client is delegated to the document, because
+            // htmx fires htmx:afterSwap on the swap target — which is a sibling of
+            // the link for sentence and paragraph modes.
+            import 'htmx.org';
+            import '../scripts/drops-client.ts';
+        </script>
     </head>
     <body class="layout-wrapper">
         <div id="navToggle" class="nav-toggle">

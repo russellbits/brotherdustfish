@@ -51,8 +51,27 @@ test('the chapter page carries the drop link with everything derived', { skip },
   }
 });
 
-test('the link keeps the hx-on reveal hook rather than a body listener', { skip }, () => {
-  assert.ok(html().includes('hx-on:htmx:after-swap="handleReveal(event)"'));
+// htmx fires htmx:afterSwap on the SWAP TARGET, which for sentence and paragraph
+// modes is a sibling of the link — so an hx-on attribute on the link would never
+// fire and the reveal would silently not run. The hook is a delegated document
+// listener instead, and this pins that the per-link form is absent.
+test('the link carries no per-link reveal hook', { skip }, () => {
+  assert.ok(!html().includes('hx-on:'), 'hx-on cannot reach the swap target');
+});
+
+test('htmx is bundled rather than pulled from a CDN', { skip }, () => {
+  assert.ok(!html().includes('unpkg.com'), 'htmx must not come from a CDN');
+  assert.ok(!/<script[^>]+src="https?:\/\//.test(html()), 'no external script tags');
+
+  const bundled = walk(join(DIST, '_astro'))
+    .filter((file) => file.endsWith('.js'))
+    .some((file) => readFileSync(file, 'utf8').includes('htmx:afterSwap'));
+
+  assert.ok(bundled, 'htmx does not appear in any built script');
+});
+
+test('the chapter page loads its own module script', { skip }, () => {
+  assert.match(html(), /<script[^>]+type="module"[^>]+src="\/_astro\//);
 });
 
 test('no link carries hx-vals', { skip }, () => {
