@@ -111,7 +111,13 @@ const sortedChapters = orderedChapters(await getCollection('chapters'));
     document.addEventListener('click', (event) => {
         const target = event.target;
         if (!(target instanceof Element)) return;
-        if (!target.closest('#coverTrigger')) return;
+
+        const control = target.closest('#coverTrigger');
+        if (!control) return;
+        // Splash only. A chapter page's cover is a 120px header image and there is no
+        // sign-up block to scroll to, so this would be a no-op that still swallowed
+        // the tap the zoom overlay needs.
+        if (!control.closest('[data-splash]')) return;
         if (!window.matchMedia(STACKED).matches) return;
 
         document.querySelector('.splash-signup')?.scrollIntoView({ behavior: 'smooth', block: 'start' });

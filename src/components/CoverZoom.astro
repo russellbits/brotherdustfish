@@ -27,14 +27,20 @@
     document.addEventListener('click', (event) => {
         if (!(event.target instanceof Element)) return;
 
-        // Opening: the sidebar cover thumbnail. It is a <button>, so there is no
-        // default action to suppress and the ClientRouter never sees an anchor.
+        // Opening: the sidebar cover. It is a <button>, so there is no default action
+        // to suppress and the ClientRouter never sees an anchor.
         //
-        // Desktop only. On mobile the cover already fills the screen and tapping it
-        // scrolls to the sign-up, so opening an overlay of the same image would be a
-        // no-op at best.
-        if (event.target.closest('#coverTrigger')) {
-            if (window.matchMedia(TABLET_QUERY).matches) return;
+        // Suppressed only in the splash, where the cover already fills the screen and
+        // tapping it scrolls to the sign-up — enlarging an image that is already
+        // screen-sized achieves nothing. On a chapter page the cover is a 120px
+        // header image at every width, and enlarging it is the whole point.
+        //
+        // Gating on the page rather than on the viewport is what keeps that control
+        // alive: keyed on width, it was dead at every size below the breakpoint, on
+        // chapter pages included.
+        const trigger = event.target.closest('#coverTrigger');
+        if (trigger) {
+            if (trigger.closest('[data-splash]') && window.matchMedia(TABLET_QUERY).matches) return;
             setVisible(!isOpen());
             return;
         }
