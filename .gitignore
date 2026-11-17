@@ -1,5 +1,8 @@
 # Build output and caches
+# `dist/` is Astro's default; `build/` is what astro.config.mjs sets via outDir.
+# Both are listed because a build directory that is not ignored gets committed.
 dist/
+build/
 .astro/
 node_modules/
 

@@ -4,16 +4,25 @@ import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { join, relative, resolve } from 'node:path';
 
 // These assert on the built site, so they need `npm run build` to have run; the
-// full acceptance runs `npm run build && npm test`. They skip rather than fail
-// when dist/ is absent so a fresh clone's `npm test` is still meaningful.
-
-const DIST = resolve(process.cwd(), 'dist');
+// full acceptance runs `npm run build && npm test`. They skip rather than fail when
+// nothing has been built, so a fresh clone's `npm test` is still meaningful.
+//
+// The directory is read from the config rather than hardcoded. It *was* hardcoded
+// to `dist/`, and when the site moved its output to `./build` every test in this
+// file silently skipped: a moved output directory is indistinguishable from
+// "nothing has been built yet", so the suite reported success while asserting
+// nothing at all. `DIST` is Astro's conventional name for the output directory,
+// not a claim about what astro.config.mjs sets.
+const config = (await import('../astro.config.mjs')).default;
+const DIST = resolve(process.cwd(), config.outDir ?? 'dist');
 const PAGE = join(DIST, 'chapter/01/meet-able/index.html');
 const FRAGMENT = join(DIST, 'drops/01-meet-able/p1s1l1.html');
 // Keyed on the chapter page, NOT on the fragment: if the guard also required the
 // fragment to exist, a missing fragment route would skip these tests instead of
 // failing them — which is precisely the regression they exist to catch.
-const skip = existsSync(PAGE) ? false : 'run `npm run build` first';
+// Names the directory it looked in, so a mismatch between this and outDir is
+// diagnosable rather than a silent pass.
+const skip = existsSync(PAGE) ? false : `nothing built in ${DIST} — run \`npm run build\` first`;
 
 const html = () => readFileSync(PAGE, 'utf8');
 
