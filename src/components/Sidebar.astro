@@ -30,10 +30,10 @@ const sortedChapters = orderedChapters(await getCollection('chapters'));
              and the chapter-page header keep the 100 KB thumbnail. -->
         <button type="button" id="coverTrigger" class="cover-trigger" aria-label="Show the cover larger">
             <picture>
-                <source
-                    media={TABLET_QUERY}
-                    srcset={splash ? '/images/book-cover-900x1245.jpg' : '/images/3D-book-cover-sm.png'}
-                />
+                <!-- Below the breakpoint the cover is the front door of every page, so
+                     the flat art replaces the 3D thumbnail there. Above it, the desktop
+                     sidebar keeps the thumbnail. -->
+                <source media={TABLET_QUERY} srcset="/images/book-cover-900x1245.jpg" />
                 <!-- The alt names the book rather than describing the file: on
                      mobile the wordmark is hidden and this is the only text that
                      identifies the site. -->
@@ -114,13 +114,15 @@ const sortedChapters = orderedChapters(await getCollection('chapters'));
 
         const control = target.closest('#coverTrigger');
         if (!control) return;
-        // Splash only. A chapter page's cover is a 120px header image and there is no
-        // sign-up block to scroll to, so this would be a no-op that still swallowed
-        // the tap the zoom overlay needs.
-        if (!control.closest('[data-splash]')) return;
         if (!window.matchMedia(STACKED).matches) return;
 
-        document.querySelector('.splash-signup')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        // The cover is a full screen of art on every page, so a tap has to lead
+        // somewhere: to the sign-up on the landing page, to the chapter otherwise.
+        const signup = document.querySelector('.splash-signup');
+        (signup ?? document.querySelector('.main-content'))?.scrollIntoView({
+            behavior: 'smooth',
+            block: 'start',
+        });
     });
 </script>
 
@@ -208,23 +210,26 @@ const sortedChapters = orderedChapters(await getCollection('chapters'));
             padding: 1.5rem 1.25rem;
         }
 
-        // The cover art carries the book's identity on mobile, so the wordmark is
-        // redundant — and it was the second "Brother Dustfish" on the landing
-        // page, the other being the landing block's h1. Hiding it also buys the
-        // vertical room the sign-up form needs to clear the fold.
-        [data-splash] .book-title {
+        // The cover carries the book's identity, so the wordmark is redundant on every
+        // page below the breakpoint — it was the second "Brother Dustfish" on the
+        // landing page, the other being the landing block's h1.
+        .book-title {
             display: none;
+        }
+
+        // The same stage metrics on every page, so the cover's height calculation
+        // below is right on a chapter page as well as the landing one.
+        .sidebar-content {
+            gap: 1rem;
+            padding: 1.5rem 1.25rem;
         }
 
         // The landing page's cover is now a whole screen of flat cover art, centred
         // on the dark stage. Tapping it scrolls to the sign-up, so the form is
         // deliberately below the fold on this page.
-        // A definite box, then `object-fit`. The first version of this put
-        // percentage max-width/max-height on the <img> inside a fit-content flex
-        // item, which is a circular size resolution — the parent's width depends on
-        // the image, and the image's max-width depends on the parent. Browsers
-        // resolve that inconsistently. A definite box has no such ambiguity.
-        [data-splash] .cover-trigger {
+        // Below the breakpoint the cover is a whole screen of flat art on every page:
+        // the reading pane, the sign-up and the contents all sit below it.
+        .cover-trigger {
             display: block;
             width: 100%;
             // The stage's own vertical padding, so a full-height cover still fits
@@ -232,31 +237,44 @@ const sortedChapters = orderedChapters(await getCollection('chapters'));
             height: calc(100dvh - 3rem);
         }
 
-        [data-splash] .cover-trigger picture {
+        .cover-trigger picture {
             display: block;
             width: 100%;
             height: 100%;
         }
 
-        // `contain`, deliberately, and never `cover`: the cover is a 1.383 ratio
-        // while a phone screen is 1.78-2.17, so covering the box would scale it to
-        // 542px wide on a 390px screen and crop ~76px from each side — clipping
-        // "A Novel by R. E. Warner", whose text begins about 75px in from the left
-        // edge. `contain` fills the box as far as the ratio allows and centres what
-        // is left, so nothing is ever cropped.
-        [data-splash] .cover-trigger img {
+        .cover-trigger img {
             display: block;
             width: 100%;
             height: 100%;
+            // The box fills the screen on both axes either way; what varies is whether
+            // the image inside it fills too, or sits whole within it. Decide that from
+            // the box's shape against the cover's own ratio below.
             object-fit: contain;
         }
 
-        // A chapter page's cover is a header, not a splash, so it is capped hard.
-        :not([data-splash]) .cover-trigger img {
-            width: auto;
-            height: auto;
-            max-height: 120px;
+        // A box narrower than the cover's 900/1245 ratio — every portrait phone, whose
+        // box is 0.46-0.56 — scales the image by height, so the *whole* height shows and
+        // the excess falls off the right edge. Anchoring left is what keeps the left
+        // margin intact, and that margin is where "A Novel by R. E. Warner" and the
+        // opening letter of the title sit. Cropping happens inside the box, so nothing
+        // overflows the page and there is nothing to scroll sideways.
+        @media (max-aspect-ratio: 900 / 1245) {
+            .cover-trigger img {
+                object-fit: cover;
+                object-position: left center;
+            }
         }
+
+        // A box *wider* than that ratio — a landscape tablet, at 1.33-1.44 — would scale
+        // by width instead and crop vertically, and there is no right-crop to take: the
+        // cover's own title sits at the bottom of the image. With the wordmark hidden
+        // below this breakpoint, a vertical crop would leave the book unnamed. So on
+        // those screens the image is contained: the box still fills the screen, and the
+        // whole cover sits inside it.
+        //
+        // If the cover art is ever replaced, this ratio changes with it.
+
 
         .toc {
             display: none;

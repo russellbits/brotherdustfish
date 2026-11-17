@@ -40,7 +40,12 @@
         // chapter pages included.
         const trigger = event.target.closest('#coverTrigger');
         if (trigger) {
-            if (trigger.closest('[data-splash]') && window.matchMedia(TABLET_QUERY).matches) return;
+            // Below the breakpoint the cover is a full screen of art on every page, so
+            // there is nothing to enlarge and the tap scrolls instead. This is gated on
+            // the viewport, not the page, and that is now correct rather than a bug:
+            // the cover's role is uniform below the breakpoint, which is what makes the
+            // tap meaningful everywhere.
+            if (window.matchMedia(TABLET_QUERY).matches) return;
             setVisible(!isOpen());
             return;
         }
