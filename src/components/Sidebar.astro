@@ -5,17 +5,21 @@ const sortedChapters = orderedChapters(await getCollection('chapters'));
 ---
 <div class="sidebar" transition:persist id="sidebar">
     <div class="sidebar-content">
-        <h1 class="book-title">Brother Dustfish</h1>
-        <a href="#" id="coverTrigger">
+        <h1 class="book-title"><a href="/">Brother Dustfish</a></h1>
+        <!-- A button, not <a href="#">: the ClientRouter intercepts any click on
+             `a, area` and treats a same-page href as a real navigation, which
+             swapped the body out from under the freshly opened overlay. -->
+        <button type="button" id="coverTrigger" class="cover-trigger" aria-label="Show the cover larger">
             <img src="/images/3D-book-cover-sm.png" alt="Book Cover Preview" width="200" height="277" />
-        </a>
+        </button>
         <div class="toc">
             <h2>Table of Contents</h2>
             <ul>
                 {sortedChapters.map(chapter => (
                     <li>
                         <a href={chapterHref(chapter)}>
-                            Chapter {chapter.data.number}: {chapter.data.title}
+                            <span class="chapter-number">Chapter {chapter.data.number}</span>
+                            <span class="chapter-title">{chapter.data.title}</span>
                         </a>
                     </li>
                 ))}
@@ -23,16 +27,6 @@ const sortedChapters = orderedChapters(await getCollection('chapters'));
         </div>
     </div>
 </div>
-
-<script>
-    // The trigger is now in the Layout, but we still need the zoom logic
-    const trigger = document.getElementById('coverTrigger');
-    trigger?.addEventListener('click', (e) => {
-        e.preventDefault();
-        const zoom = document.getElementById('coverZoom');
-        zoom?.classList.toggle('is-visible');
-    });
-</script>
 
 <style lang="scss">
     .sidebar-content {
@@ -44,16 +38,54 @@ const sortedChapters = orderedChapters(await getCollection('chapters'));
         color: var(--text-color-light);
     }
 
+    .cover-trigger {
+        // Reset the UA button chrome so the thumbnail looks exactly as it did
+        // when this was an anchor.
+        appearance: none;
+        border: 0;
+        margin: 0;
+        padding: 0;
+        background: none;
+        color: inherit;
+        font: inherit;
+        line-height: 0;
+        cursor: pointer;
+        -webkit-tap-highlight-color: transparent;
+
+        img {
+            display: block;
+        }
+
+        &:focus-visible {
+            outline: 2px solid var(--sidebar-link-hover);
+            outline-offset: 4px;
+        }
+    }
+
     .book-title {
         font-family: 'Georgia', serif;
         font-size: 3rem;
         font-weight: 900;
         margin: 1rem 0;
+
+        a {
+            color: white;
+            text-decoration: none;
+        }
+
+        a:hover {
+            text-decoration: underline;
+        }
     }
 
     .toc {
         width: 100%;
-        margin-top: 2rem;
+        // margin-top: 2rem;
+        margin: 2rem 0 2rem 5rem;
+        // The sidebar chrome (title, cover) stays centered; the TOC reads as a
+        // left-aligned list.
+        text-align: left;
+        --toc-number-size: 0.9rem;
 
         h2 {
             font-family: 'Georgia', serif;
@@ -69,16 +101,28 @@ const sortedChapters = orderedChapters(await getCollection('chapters'));
             display: flex;
             flex-direction: column;
             justify-items: left;
-            gap: 0.8rem;
+            gap: 1.1rem;
 
             li a {
+                display: flex;
+                flex-direction: column;
+                align-items: flex-start;
+                row-gap: 0.15rem;
                 color: var(--text-color-light);
                 text-decoration: none;
-                font-size: 0.9rem;
                 transition: color 0.3s ease;
 
                 &:hover {
                     color: var(--sidebar-link-hover);
+                }
+
+                .chapter-number {
+                    font-size: var(--toc-number-size);
+                }
+
+                .chapter-title {
+                    font-size: calc(var(--toc-number-size) + 5px);
+                    line-height: 1.25;
                 }
             }
         }

@@ -1,0 +1,200 @@
+---
+---
+
+<button
+    id="themeToggle"
+    class="theme-toggle"
+    type="button"
+    role="switch"
+    aria-checked="false"
+    aria-label="Toggle dark mode"
+    title="Toggle dark mode"
+>
+    <span class="theme-toggle__track">
+        <span class="theme-toggle__thumb">
+            <svg class="theme-toggle__icon theme-toggle__icon--sun" viewBox="0 0 24 24" aria-hidden="true">
+                <circle cx="12" cy="12" r="5"></circle>
+                <line x1="12" y1="1" x2="12" y2="3"></line>
+                <line x1="12" y1="21" x2="12" y2="23"></line>
+                <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                <line x1="1" y1="12" x2="3" y2="12"></line>
+                <line x1="21" y1="12" x2="23" y2="12"></line>
+                <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+            </svg>
+            <svg class="theme-toggle__icon theme-toggle__icon--moon" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+            </svg>
+        </span>
+    </span>
+</button>
+
+<script>
+    (function () {
+        const STORAGE_KEY = 'theme';
+
+        // Astro's ClientRouter wipes *every* attribute off <html> during a swap
+        // (swapRootAttributes keeps only its own two), so the data-theme set by the
+        // no-flash inline script does not survive an in-site navigation. Storage is
+        // therefore the source of truth and the attribute is re-applied after each
+        // swap; astro:after-swap fires inside the view-transition callback, before
+        // the incoming page is snapshotted, so there is no flash.
+        type Theme = 'dark' | 'light';
+
+        let initialized = false;
+
+        function storedTheme(): Theme | null {
+            try {
+                const value = localStorage.getItem(STORAGE_KEY);
+                return value === 'dark' || value === 'light' ? value : null;
+            } catch (e) {
+                return null;
+            }
+        }
+
+        function systemTheme(): Theme {
+            return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+        }
+
+        function resolveTheme(): Theme {
+            return storedTheme() ?? systemTheme();
+        }
+
+        function syncToggle(theme: Theme) {
+            const toggle = document.getElementById('themeToggle');
+            if (!toggle) return;
+            const isDark = theme === 'dark';
+            toggle.setAttribute('aria-checked', String(isDark));
+            toggle.setAttribute('aria-label', isDark ? 'Switch to light mode' : 'Switch to dark mode');
+            toggle.setAttribute('title', isDark ? 'Switch to light mode' : 'Switch to dark mode');
+        }
+
+        function applyTheme(theme: Theme) {
+            document.documentElement.dataset.theme = theme;
+            syncToggle(theme);
+        }
+
+        function initThemeToggle() {
+            // Guard lives in module scope, not on <html>: DOM attributes are wiped
+            // by the swap, and this module script only runs once per page load.
+            if (initialized) return;
+            initialized = true;
+
+            document.addEventListener('click', (event) => {
+                const target = event.target instanceof Element ? event.target.closest('#themeToggle') : null;
+                if (!target) return;
+                const next = resolveTheme() === 'dark' ? 'light' : 'dark';
+                try {
+                    localStorage.setItem(STORAGE_KEY, next);
+                } catch (e) {}
+                applyTheme(next);
+            });
+
+            // Restore the theme (and the button's state) after the swap cleared it.
+            document.addEventListener('astro:after-swap', () => applyTheme(resolveTheme()));
+
+            window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (event) => {
+                // Follow the OS only while the reader has not chosen explicitly.
+                if (!storedTheme()) applyTheme(event.matches ? 'dark' : 'light');
+            });
+
+            applyTheme(resolveTheme());
+        }
+
+        initThemeToggle();
+    })();
+</script>
+
+<style lang="scss">
+    .theme-toggle {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        z-index: 1100;
+        width: 64px;
+        height: 34px;
+        padding: 0;
+        border: 1px solid var(--toggle-border);
+        border-radius: 999px;
+        background: var(--toggle-bg);
+        cursor: pointer;
+        transition: background-color 0.4s ease, border-color 0.4s ease;
+        -webkit-tap-highlight-color: transparent;
+        box-shadow: 0 2px 12px rgba(0, 0, 0, 0.12);
+
+        &:focus-visible {
+            outline: 2px solid var(--accent-color);
+            outline-offset: 3px;
+        }
+    }
+
+    .theme-toggle__track {
+        position: relative;
+        display: block;
+        width: 100%;
+        height: 100%;
+    }
+
+    .theme-toggle__thumb {
+        position: absolute;
+        top: 3px;
+        left: 3px;
+        width: 26px;
+        height: 26px;
+        border-radius: 50%;
+        background: var(--toggle-knob);
+        color: var(--toggle-knob-icon);
+        display: grid;
+        place-items: center;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+        transition: transform 0.4s cubic-bezier(0.65, 0, 0.35, 1),
+            background-color 0.4s ease,
+            color 0.4s ease;
+    }
+
+    :global([data-theme="dark"]) .theme-toggle__thumb {
+        transform: translateX(30px);
+    }
+
+    .theme-toggle__icon {
+        position: absolute;
+        width: 16px;
+        height: 16px;
+        transition: opacity 0.3s ease, transform 0.4s ease;
+    }
+
+    .theme-toggle__icon--sun {
+        fill: none;
+        stroke: currentColor;
+        stroke-width: 2;
+        stroke-linecap: round;
+        opacity: 1;
+        transform: rotate(0deg) scale(1);
+    }
+
+    .theme-toggle__icon--moon {
+        fill: currentColor;
+        stroke: none;
+        opacity: 0;
+        transform: rotate(-90deg) scale(0.6);
+    }
+
+    :global([data-theme="dark"]) .theme-toggle__icon--sun {
+        opacity: 0;
+        transform: rotate(90deg) scale(0.6);
+    }
+
+    :global([data-theme="dark"]) .theme-toggle__icon--moon {
+        opacity: 1;
+        transform: rotate(0deg) scale(1);
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .theme-toggle,
+        .theme-toggle__thumb,
+        .theme-toggle__icon {
+            transition: none;
+        }
+    }
+</style>

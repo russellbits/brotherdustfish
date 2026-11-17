@@ -44,6 +44,11 @@ article {
         line-height: clamp(1.2rem, 5vw, 1.5rem);
         text-align: left;
         text-indent: 2rem;
-        max-width: 60vw;
+        // Measure in `ch` rather than `vw`: ~65 characters is the comfortable
+        // reading width, and it stays put as the viewport changes.
+        max-width: 65ch;
+        // The measure is narrower than its container, so center the column on the
+        // same axis as the chapter image and headings.
+        margin-inline: auto;
     }
 }

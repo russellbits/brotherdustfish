@@ -1,0 +1,76 @@
+// Directional chapter-to-chapter transitions.
+//
+// The ClientRouter (Layout.astro) sets `data-nav-direction` on <html> *before*
+// Astro calls `document.startViewTransition()`, and the view-transition pseudo
+// tree inherits custom properties from the document element — so one pair of
+// rules covers both travel directions.
+//
+// Only the reading pane moves: everything else (sidebar, fixed toggles, cover
+// zoom) holds still, which keeps the effect anchored to the text being read.
+
+:root {
+    --vt-duration: 0.45s;
+    --vt-ease: cubic-bezier(0.65, 0, 0.35, 1);
+    --vt-shift: 15%;
+
+    // Forward is the default, including the first load and landing -> chapter 1.
+    --vt-old: vt-exit-left;
+    --vt-new: vt-enter-right;
+}
+
+:root[data-nav-direction="back"] {
+    --vt-old: vt-exit-right;
+    --vt-new: vt-enter-left;
+}
+
+@keyframes vt-exit-left {
+    from { opacity: 1; transform: translateX(0); }
+    to   { opacity: 0; transform: translateX(calc(var(--vt-shift) * -1)); }
+}
+
+@keyframes vt-enter-right {
+    from { opacity: 0; transform: translateX(var(--vt-shift)); }
+    to   { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes vt-exit-right {
+    from { opacity: 1; transform: translateX(0); }
+    to   { opacity: 0; transform: translateX(var(--vt-shift)); }
+}
+
+@keyframes vt-enter-left {
+    from { opacity: 0; transform: translateX(calc(var(--vt-shift) * -1)); }
+    to   { opacity: 1; transform: translateX(0); }
+}
+
+::view-transition-old(root),
+::view-transition-new(root) {
+    animation: none;
+    // The UA default blends new(root) with `plus-lighter`; because the old and
+    // new root snapshots are identical, that would visibly brighten the sidebar
+    // for the duration of the transition.
+    mix-blend-mode: normal;
+}
+
+::view-transition-old(chapter-content),
+::view-transition-new(chapter-content) {
+    mix-blend-mode: normal;
+    animation-duration: var(--vt-duration);
+    animation-timing-function: var(--vt-ease);
+    animation-fill-mode: both;
+}
+
+::view-transition-old(chapter-content) {
+    animation-name: var(--vt-old);
+}
+
+::view-transition-new(chapter-content) {
+    animation-name: var(--vt-new);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    :root {
+        --vt-old: none;
+        --vt-new: none;
+    }
+}

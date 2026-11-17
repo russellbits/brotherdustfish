@@ -2,9 +2,9 @@ import { defineCollection, z } from 'astro:content';
 import { glob } from 'astro/loaders';
 
 const chapters = defineCollection({
-  // Each chapter is a folder: src/content/chapters/<slug>/chapter.mdx, with its
-  // own images/ sibling. The entry id is the folder name, which is what the
-  // /chapter/<slug> URLs are built from.
+  // Each chapter is a folder: src/content/chapters/<NN>-<slug>/chapter.mdx, with
+  // its own images/ sibling. The entry id is that folder name, which the
+  // /chapter/<NN>/<slug> URLs are derived from.
   loader: glob({
     pattern: '*/chapter.mdx',
     base: './src/content/chapters',

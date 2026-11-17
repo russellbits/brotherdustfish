@@ -1,0 +1,26 @@
+---
+import { getCollection } from 'astro:content';
+import { chapterParts, orderedChapters, type Chapter } from '../../../lib/chapters';
+
+interface Props {
+    slug: string;
+}
+
+// `/chapter/01/` has no title of its own; it expands to the canonical
+// `/chapter/<NN>/<slug>` URL for whichever chapter owns that number.
+export async function getStaticPaths() {
+    const chapters = orderedChapters(await getCollection('chapters'));
+    return chapters.map((chapter: Chapter) => {
+        const { number, slug } = chapterParts(chapter);
+        return {
+            params: { number },
+            props: { slug },
+        };
+    });
+}
+
+const { slug } = Astro.props;
+const { number } = Astro.params;
+
+return Astro.redirect(`/chapter/${number}/${slug}`, 301);
+---

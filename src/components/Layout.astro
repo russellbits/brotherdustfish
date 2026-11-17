@@ -52,5 +52,62 @@ const { title = "Brother Dustfish" } = Astro.props;
                 document.getElementById('sidebar')?.classList.toggle('hidden');
             });
         </script>
+        <script>
+            // Marks each chapter navigation as forward or backward so the CSS can
+            // pick the matching slide direction. Capture phase on document is what
+            // makes this work: the ClientRouter registers its own click handler in
+            // the bubble phase, so we always decide the direction before it calls
+            // startViewTransition().
+            const CHAPTER_NUMBER = /^\/chapter\/(\d+)(?:\/|$)/;
+
+            function chapterNumber(pathname: string): number | null {
+                const match = CHAPTER_NUMBER.exec(pathname);
+                return match ? Number(match[1]) : null;
+            }
+
+            // The sidebar can jump arbitrary distances, so compare chapter numbers
+            // rather than assuming adjacent pages.
+            let currentNumber = chapterNumber(location.pathname);
+
+            function markDirection(targetNumber: number | null) {
+                const backward =
+                    currentNumber !== null && targetNumber !== null && targetNumber < currentNumber;
+                document.documentElement.dataset.navDirection = backward ? 'back' : 'forward';
+            }
+
+            document.addEventListener(
+                'click',
+                (event) => {
+                    // Mirror the modifiers Astro itself uses to bail out of a
+                    // client-side transition (new tab, forced download, etc.).
+                    if (event.button !== 0 || event.metaKey || event.ctrlKey || event.altKey || event.shiftKey) {
+                        return;
+                    }
+                    const origin = event.target;
+                    if (!(origin instanceof Element)) return;
+                    const anchor = origin.closest('a[href]');
+                    if (!(anchor instanceof HTMLAnchorElement)) return;
+                    if (anchor.origin !== location.origin || anchor.hash) return;
+
+                    const target = chapterNumber(anchor.pathname);
+                    if (target !== null) markDirection(target);
+                },
+                { capture: true },
+            );
+
+            // Browser back/forward has no click to inspect; the URL is already the
+            // destination when popstate fires, so compare it against where we are.
+            window.addEventListener(
+                'popstate',
+                () => markDirection(chapterNumber(location.pathname)),
+                { capture: true },
+            );
+
+            // History is updated before Astro fires this event, so location is the
+            // newly swapped page here.
+            document.addEventListener('astro:after-swap', () => {
+                currentNumber = chapterNumber(location.pathname);
+            });
+        </script>
     </body>
 </html>

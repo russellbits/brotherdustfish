@@ -5,9 +5,43 @@
 </div>
 
 <script>
-    const zoom = document.getElementById('coverZoom');
-    zoom?.addEventListener('click', () => {
-        zoom?.classList.remove('is-visible');
+    // Both halves of the interaction are delegated from `document` on purpose.
+    // The ClientRouter swaps the body without reloading and Astro only runs each
+    // module script once, so a listener bound directly to #coverZoom would vanish
+    // after the first in-site navigation. #coverTrigger lives in the persisted
+    // sidebar, but keeping the open/close logic together avoids that split.
+    function overlay() {
+        return document.getElementById('coverZoom');
+    }
+
+    function isOpen() {
+        return overlay()?.classList.contains('is-visible') ?? false;
+    }
+
+    function setVisible(visible: boolean) {
+        overlay()?.classList.toggle('is-visible', visible);
+    }
+
+    document.addEventListener('click', (event) => {
+        if (!(event.target instanceof Element)) return;
+
+        // Opening: the sidebar cover thumbnail. It is a <button>, so there is no
+        // default action to suppress and the ClientRouter never sees an anchor.
+        if (event.target.closest('#coverTrigger')) {
+            setVisible(!isOpen());
+            return;
+        }
+
+        // Closing: anywhere on the interstitial, including the enlarged cover.
+        if (event.target.closest('#coverZoom')) {
+            setVisible(false);
+        }
+    });
+
+    document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape' && isOpen()) {
+            setVisible(false);
+        }
     });
 </script>
 
@@ -24,7 +58,10 @@
         display: flex;
         justify-content: center;
         align-items: center;
-        z-index: 1000;
+        // Must sit above both fixed toggles (.nav-toggle at 1001, .theme-toggle
+        // at 1100) or they stay clickable through what should be a full-page
+        // interstitial — and clicking them would not dismiss the cover.
+        z-index: 1200;
         background-color: var(--cover-overlay);
         cursor: pointer;
 
