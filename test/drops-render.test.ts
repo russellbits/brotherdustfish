@@ -46,12 +46,14 @@ test('a drop cannot mint an id or name that collides with the document', async (
   assert.ok(!out.includes('name='));
 });
 
+// Uses a file that really exists under public/: from Task 3 onwards an image src
+// is checked against public/, so a placeholder path would be refused.
 test('a figure with an image survives', async () => {
   const out = await render(
-    '<figure><img src="/images/a.png" alt="a"><figcaption>c</figcaption></figure>',
+    '<figure><img src="/images/arrow.svg" alt="a"><figcaption>c</figcaption></figure>',
   );
   assert.ok(out.includes('<figure>'));
-  assert.ok(out.includes('<img src="/images/a.png" alt="a">'));
+  assert.ok(out.includes('<img src="/images/arrow.svg" alt="a">'));
   assert.ok(out.includes('<figcaption>c</figcaption>'));
 });
 
