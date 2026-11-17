@@ -196,12 +196,43 @@ a.hx-link.expanded {
     width: fit-content;
     max-width: 100%;
     margin-inline: auto;
-    // The picture should reach the column edge on a phone, so the frame gives up
-    // its side padding and lets the image sit flush inside it.
-    padding-inline: 0;
+    // A mount: 15px of the frame's own paper beyond the picture on three sides. The
+    // caption sits below it, so the fourth side is smaller.
+    padding: 15px 15px 10px;
     // Centres the caption. The image fills the frame, so it needs no centring of
     // its own.
     text-align: center;
+
+    // The glyph has moved into the caption, where it is a real control. Text drops
+    // keep the decorative marker they have always had.
+    &::before {
+        content: none;
+    }
+}
+
+// The collapse control, at the end of a figure's caption.
+.expansion-collapse {
+    appearance: none;
+    border: 0;
+    background: none;
+    color: var(--expansion-accent);
+    font: inherit;
+    line-height: 1;
+    // A 14px glyph is not a tap target.
+    padding: 9px;
+    margin-left: 0.35em;
+    cursor: pointer;
+    vertical-align: middle;
+    -webkit-tap-highlight-color: transparent;
+
+    &:hover {
+        color: var(--expansion-accent-light);
+    }
+
+    &:focus-visible {
+        outline: 2px solid var(--expansion-accent);
+        outline-offset: 2px;
+    }
 }
 
 .expansion-paragraph figure {

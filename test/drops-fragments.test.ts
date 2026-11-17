@@ -107,7 +107,33 @@ test('a lone image becomes a figure, keeping the alt on the image', async () => 
 
 test('an image title becomes a figcaption', async () => {
   const out = await renderDropBody(entry('![alt text](/images/arrow.svg "the caption")'));
-  assert.ok(out.includes('<figcaption>the caption</figcaption>'), out);
+  assert.match(out, /<figcaption>the caption/, out);
+});
+
+// An image drop's only collapse affordance used to be the term itself, which on a
+// 670px-tall figure means scrolling back up to find it. The control lives at the
+// end of the caption instead, injected by the pipeline because that is where the
+// tree still exists — wrapFragment only receives serialised HTML.
+test('an image drop carries a collapse control at the end of its caption', async () => {
+  const out = await renderDropBody(entry('![the Skybow](/images/arrow.svg "A caption")'));
+
+  assert.match(out, /<figcaption>A caption<button[^>]*data-collapse/, out);
+});
+
+// A figure only gets a figcaption today when the image supplies a title, and the
+// control needs somewhere to live regardless.
+test('an image drop with no title still gets a caption to hold the control', async () => {
+  const out = await renderDropBody(entry('![the Skybow](/images/arrow.svg)'));
+
+  assert.match(out, /<figcaption><button[^>]*data-collapse/, out);
+});
+
+// Text drops keep the decorative marker they already had; only figures get a
+// control, because only figures are tall enough to hide their own term.
+test('a text drop gets no collapse control', async () => {
+  const out = await renderDropBody(entry('A single paragraph body.'));
+
+  assert.ok(!out.includes('data-collapse'), out);
 });
 
 test('a remote image src needs no local file', async () => {

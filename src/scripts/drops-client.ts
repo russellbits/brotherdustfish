@@ -136,6 +136,36 @@ export function handleToggle(event: Event, expansionId: string): void {
     link.classList.add('expanded');
 }
 
+/**
+ * The in-content collapse control.
+ *
+ * A figure can be tall enough to push its own term off the screen — the sample image
+ * is 670px on a phone — so the affordance that dismisses it sits with the figure
+ * rather than only on the link far above. It goes through the same
+ * `collapseExpansion` the link uses, so the two cannot drift apart.
+ */
+export function handleCollapseControl(event: Event): void {
+    const origin = event.target;
+    if (!(origin instanceof Element)) return;
+
+    const control = origin.closest('[data-collapse]');
+    if (!control) return;
+
+    const expansion = control.closest('[id$="-exp"]');
+    if (!expansion) return;
+
+    // The wrapper's id is the link's id plus a suffix, so the link is derivable
+    // rather than having to be passed through the fragment.
+    const link = document.getElementById(expansion.id.replace(/-exp$/, ''));
+    if (!link) return;
+
+    event.preventDefault();
+    // The same handshake the link performs: htmx must not refetch while it animates
+    // out, and a later click on the link re-expands.
+    link.setAttribute('hx-disable', '');
+    collapseExpansion(expansion, link, () => link.removeAttribute('hx-disable'));
+}
+
 /** Delegated reveal for every swap, whichever element the mode targeted. */
 export function handleReveal(event: Event): void {
     const target = (event as CustomEvent<{ elt?: unknown }>).detail?.elt;
@@ -152,5 +182,6 @@ export function handleReveal(event: Event): void {
 
 if (typeof document !== 'undefined') {
     document.addEventListener('htmx:afterSwap', handleReveal);
+    document.addEventListener('click', handleCollapseControl);
     Object.assign(window, { handleToggle });
 }

@@ -54,7 +54,10 @@ test('a figure with an image survives', async () => {
   );
   assert.ok(out.includes('<figure>'));
   assert.ok(out.includes('<img src="/images/arrow.svg" alt="a">'));
-  assert.ok(out.includes('<figcaption>c</figcaption>'));
+  // The collapse control is appended to every figure's caption, including one the
+  // author wrote by hand — a figure is a figure, and a hand-written one is just as
+  // capable of hiding its own term.
+  assert.match(out, /<figcaption>c<button[^>]*data-collapse/);
 });
 
 test('markdown that looks like a link inside a code span stays text', async () => {

@@ -286,6 +286,51 @@ function isWhitespaceText(node: HastNode): boolean {
 }
 
 /**
+ * The control that dismisses a figure.
+ *
+ * It is emitted here, by the pipeline, rather than by `wrapFragment`, because it has
+ * to live *inside* the caption — and wrapFragment only ever sees serialised HTML, so
+ * putting it there would mean splicing a string into markup, which is the thing this
+ * pipeline exists to avoid.
+ *
+ * It is also added *after* `rehype-sanitize`, deliberately: this is our own markup,
+ * and adding `button` to the allow-list would let a drop author write one.
+ */
+function collapseControl(): HastNode {
+    return {
+        type: 'element',
+        tagName: 'button',
+        properties: {
+            type: 'button',
+            className: ['expansion-collapse'],
+            dataCollapse: '',
+            ariaLabel: 'Collapse this expansion',
+        },
+        children: [{ type: 'text', value: '↳' }],
+    };
+}
+
+/**
+ * Put that control at the end of every figure's caption, creating a caption when the
+ * image supplied no title to make one from.
+ */
+export function addCollapseControl(root: HastNode): void {
+    walk(root, (node) => {
+        if (!isElement(node, 'figure')) return;
+
+        const children = (node.children ??= []);
+        let caption = children.find((child) => isElement(child, 'figcaption'));
+
+        if (!caption) {
+            caption = { type: 'element', tagName: 'figcaption', properties: {}, children: [] };
+            children.push(caption);
+        }
+
+        (caption.children ??= []).push(collapseControl());
+    });
+}
+
+/**
  * Images must be root-absolute, and the file must exist.
  *
  * A relative `src` is refused rather than resolved: a drop's HTML is inserted
@@ -375,7 +420,8 @@ const dropProcessor = unified()
     .use(rehypeRaw)
     .use(rehypeSanitize, DROP_SCHEMA)
     .use(() => checkImages as (root: HastNode) => void)
-    .use(() => wrapLoneImages as (root: HastNode) => void);
+    .use(() => wrapLoneImages as (root: HastNode) => void)
+    .use(() => addCollapseControl as (root: HastNode) => void);
 
 /** Compiled without a parser, purely so a subtree can be serialized. */
 const stringifier = unified().use(rehypeStringify);
