@@ -31,7 +31,7 @@ const sortedChapters = orderedChapters(await getCollection('chapters'));
             <picture>
                 <source
                     media="(max-width: 1023px)"
-                    srcset={splash ? '/images/3D-book-cover.png' : '/images/3D-book-cover-sm.png'}
+                    srcset={splash ? '/images/book-cover-900x1245.jpg' : '/images/3D-book-cover-sm.png'}
                 />
                 <!-- The alt names the book rather than describing the file: on
                      mobile the wordmark is hidden and this is the only text that
@@ -96,6 +96,21 @@ const sortedChapters = orderedChapters(await getCollection('chapters'));
 
         if (!window.matchMedia(MOBILE).matches) return;
         document.querySelector('.main-content')?.scrollIntoView({ block: 'start' });
+    });
+
+    // Tapping the cover takes the reader to the sign-up.
+    //
+    // The cover fills the first screen on mobile, so the form is deliberately below
+    // the fold — this tap is the affordance that reaches it. The zoom overlay is a
+    // desktop affordance for the small 3D thumbnail and is suppressed at this width
+    // in CoverZoom, because enlarging an already screen-sized cover achieves nothing.
+    document.addEventListener('click', (event) => {
+        const target = event.target;
+        if (!(target instanceof Element)) return;
+        if (!target.closest('#coverTrigger')) return;
+        if (!window.matchMedia(MOBILE).matches) return;
+
+        document.querySelector('.splash-signup')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     });
 </script>
 
@@ -191,18 +206,29 @@ const sortedChapters = orderedChapters(await getCollection('chapters'));
             display: none;
         }
 
-        // Capped, so the form and the disclosure below the art stay reachable
-        // without scrolling past an entire screen of cover.
+        // The landing page's cover is now a whole screen of flat cover art, centred
+        // on the dark stage. Tapping it scrolls to the sign-up, so the form is
+        // deliberately below the fold on this page.
+        [data-splash] .cover-trigger {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            // The stage's own vertical padding, so a full-height cover still fits
+            // inside one screen.
+            height: calc(100dvh - 3rem);
+        }
+
+        // `max-width`/`max-height` rather than `object-fit: cover`, deliberately.
+        // The cover is a 1.383 ratio and a phone screen is 1.78-2.17, so filling the
+        // height means scaling to 542px wide on a 390px screen and cropping ~76px
+        // from each side — which clips "A Novel by R. E. Warner", whose text begins
+        // about 75px in from the left edge. It is centred and never cropped instead.
         [data-splash] .cover-trigger img {
             width: auto;
-            // Bigger than the 84vw it started at, and capped in dvh so the whole
-            // stage — cover, form and disclosure — still fits one screen on a
-            // short phone rather than pushing the form below the fold.
-            max-width: 92vw;
-            max-height: min(48dvh, 420px);
-            // Matches the art currently wired in: 3D-book-cover.png is 1200x1200.
-            // Change to `1 / 1.385` when the portrait mobile cover lands.
-            aspect-ratio: 1 / 1;
+            height: auto;
+            max-width: 100%;
+            max-height: 100%;
         }
 
         // A chapter page's cover is a header, not a splash, so it is capped hard.

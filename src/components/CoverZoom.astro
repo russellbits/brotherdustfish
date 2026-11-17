@@ -27,7 +27,12 @@
 
         // Opening: the sidebar cover thumbnail. It is a <button>, so there is no
         // default action to suppress and the ClientRouter never sees an anchor.
+        //
+        // Desktop only. On mobile the cover already fills the screen and tapping it
+        // scrolls to the sign-up, so opening an overlay of the same image would be a
+        // no-op at best.
         if (event.target.closest('#coverTrigger')) {
+            if (window.matchMedia('(max-width: 1023px)').matches) return;
             setVisible(!isOpen());
             return;
         }
