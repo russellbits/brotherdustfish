@@ -53,8 +53,16 @@ article {
 
     p {
         font-family: $primary-font;
-        font-size: clamp(0.5rem, 5vw, 1rem);
-        line-height: clamp(1.2rem, 5vw, 1.5rem);
+        // Body copy: ~17.4px on a 390px phone rising to 19.2px on a desktop, with a
+        // 17px absolute floor. The previous clamp(0.5rem, 5vw, 1rem) had an 8px
+        // floor and did not reach its 16px ceiling until a 320px viewport, so it
+        // resolved to a flat 16px at every width — the clamp never engaged.
+        font-size: clamp(1.0625rem, 1rem + 0.35vw, 1.2rem);
+        // Unitless, so leading tracks the type size instead of fighting it. The same
+        // 5vw that sized the old text also drove its line-height, pinning a phone to
+        // 1.22 — dense-UI leading, not prose leading. 1.5-1.6 is the comfortable
+        // range for long-form serif text.
+        line-height: 1.55;
         text-align: left;
         text-indent: 2rem;
         // Measure in `ch` rather than `vw`: ~65 characters is the comfortable
