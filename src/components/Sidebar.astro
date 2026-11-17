@@ -33,7 +33,10 @@ const sortedChapters = orderedChapters(await getCollection('chapters'));
                     media="(max-width: 1023px)"
                     srcset={splash ? '/images/3D-book-cover.png' : '/images/3D-book-cover-sm.png'}
                 />
-                <img src="/images/3D-book-cover-sm.png" alt="Book Cover Preview" />
+                <!-- The alt names the book rather than describing the file: on
+                     mobile the wordmark is hidden and this is the only text that
+                     identifies the site. -->
+                <img src="/images/3D-book-cover-sm.png" alt="Brother Dustfish — book cover" />
             </picture>
         </button>
 
@@ -137,21 +140,32 @@ const sortedChapters = orderedChapters(await getCollection('chapters'));
         // whose contents are centered down the screen.
         [data-splash] .sidebar-content {
             justify-content: center;
-            gap: 1.5rem;
+            gap: 1rem;
             // dvh, not vh: on mobile Safari `vh` includes the address bar, so the
             // stage would be taller than the screen and clipped. The vh line is
             // the fallback for browsers without dvh.
             min-height: 100vh;
             min-height: 100dvh;
-            padding: 2rem 1.25rem;
+            padding: 1.5rem 1.25rem;
+        }
+
+        // The cover art carries the book's identity on mobile, so the wordmark is
+        // redundant — and it was the second "Brother Dustfish" on the landing
+        // page, the other being the landing block's h1. Hiding it also buys the
+        // vertical room the sign-up form needs to clear the fold.
+        [data-splash] .book-title {
+            display: none;
         }
 
         // Capped, so the form and the disclosure below the art stay reachable
         // without scrolling past an entire screen of cover.
         [data-splash] .cover-trigger img {
             width: auto;
-            max-width: 84vw;
-            max-height: min(50dvh, 400px);
+            // Bigger than the 84vw it started at, and capped in dvh so the whole
+            // stage — cover, form and disclosure — still fits one screen on a
+            // short phone rather than pushing the form below the fold.
+            max-width: 92vw;
+            max-height: min(48dvh, 420px);
             // Matches the art currently wired in: 3D-book-cover.png is 1200x1200.
             // Change to `1 / 1.385` when the portrait mobile cover lands.
             aspect-ratio: 1 / 1;

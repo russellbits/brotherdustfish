@@ -89,6 +89,23 @@ const firstChapter = orderedChapters(await getCollection('chapters'))[0];
             // The horizontal gutter belongs to .main-content on mobile; keeping
             // this block's own side padding would double it.
             padding: 1.5rem 0;
+
+            // The cover art carries the book's identity on mobile, and the
+            // sidebar's wordmark is hidden there, so this repeats a title the
+            // reader has already seen. Visually hidden rather than
+            // `display: none` so the page keeps a level-one heading for assistive
+            // technology — the cover image's alt text names the book too.
+            h1 {
+                position: absolute;
+                width: 1px;
+                height: 1px;
+                padding: 0;
+                margin: -1px;
+                overflow: hidden;
+                clip-path: inset(50%);
+                white-space: nowrap;
+                border: 0;
+            }
         }
     }
 </style>
