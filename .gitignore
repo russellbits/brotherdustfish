@@ -1,0 +1,20 @@
+# Build output and caches
+dist/
+.astro/
+node_modules/
+
+# Superpowers scratch: brainstorm sessions, SDD ledgers, throwaway scripts.
+# Nothing here is a deliverable; the record that matters lives in git.
+.superpowers/
+
+# macOS
+.DS_Store
+
+# Logs
+*.log
+npm-debug.log*
+
+# Environment
+.env
+.env.*
+!.env.example
