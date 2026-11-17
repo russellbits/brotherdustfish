@@ -10,6 +10,28 @@
 
 **Spec:** `docs/superpowers/specs/2026-11-17-drop-content-system-design.md` — the plan argues from the spec; read both. Section references below (`§n`) are to the spec.
 
+## Errata — where execution departed from this plan
+
+A plan is an argument, not a record: this one was written before the code existed, and building it disproved several things it asserts. Every entry below is also recorded as an erratum in the spec, and every one is here because the plan's version **fails** rather than merely differs. Where a task body has been corrected, the correction is inline; the rest are listed here.
+
+| Plan said | What was actually done | Why |
+|---|---|---|
+| Task 1: tsconfig `exclude` includes `.astro` | `.astro` is **not** excluded | excluding it removes `.astro/types.d.ts`, which supplies the `ImportMetaEnv` types `import.meta.env?.BASE_URL` needs |
+| Task 1: devDeps `typescript`, `@astrojs/check` | plus **`@types/node`** | without it `astro check` reports TS2591 on `node:test` in this plan's own test file, so its acceptance condition could never hold |
+| Task 1: `dropHref` ends in `/` | ends in **`.html`** | see the route row below |
+| Task 2: figure test uses a placeholder image path | uses a real file under `public/` | Task 3 introduces the rule that an image `src` must exist |
+| Task 3: `wrapFragment(…, innerHtml: string, …)` | `wrapFragment(…, body: DropBody, …)` | choosing `<p>` vs `<div>` from serialized HTML means regexing it, which §6 rejects |
+| Task 4: `generateId` regex | `replace(/^(.+)\/drops\/([^/]+)\.md$/, '$1/$2')` | the plan's regex eats the separator, producing the id `01-meet-ablep1s1l1`, and the build still stays green |
+| Task 7: bind the namespace with a `components` closure | an explicit **`chapter` prop** on each link | the closure fails the build with `NoMatchingRenderer` |
+| Task 8: `src/pages/drops/[...id].astro` | **`src/pages/drops/[...id].html.ts`**, an endpoint | a page route gets `<!DOCTYPE html>` prepended, so it can never emit a bare fragment |
+| Task 8: fragment written to `…/<name>/index.html` | `…/<name>.html` | an endpoint cannot emit `index.html`, and an extensionless file has its Content-Type guessed |
+| Task 10: `hx-on:htmx:after-swap` on each link | one delegated `document` listener | htmx dispatches on the swap target, a sibling of the link for two of the three modes |
+| Tasks 9/10: read the reference prototype in-repo | read from the main checkout by absolute path | `the-hyperarticle/` is untracked and absent from the worktree |
+| Task 9: port `house.css` colours unchanged | three literal text colours became tokens | the reference is light-only; this site has a dark theme |
+| §15: `astro check` clean | **no new** errors | the baseline is 50 pre-existing errors, all in `src/components/LifeBreaks.astro` |
+
+The decisions the plan argues for — D1–D6, the sanitize allow-list, the build-time inventory, refusing `hx-vals`, verifying Sätteri's phase order rather than assuming it — all held as written.
+
 ## Global Constraints
 
 - **Node 22.19.0.** Node runs `.ts` tests directly via type stripping. Two consequences, both verified: relative imports in test files **must carry the `.ts` extension** (`import { x } from '../src/lib/drops.ts'`), and the test script must be `node --test "test/**/*.test.ts"` — a bare directory argument fails on this version, an unquoted glob only goes one level deep.
@@ -45,7 +67,7 @@ Five input classes the spec implies but whose tests live only in the tasks below
 | `src/lib/drop-schema.ts` | The `drops` Zod schema, extracted so it is unit-testable without the `astro:content` virtual module. |
 | `src/plugins/chapter-anchors.ts` | Sätteri `before` hook: paragraph ids, sentence-1 anchors, `<Sentence n>` rewriting. |
 | `src/components/Drop.astro` | The authoring tag: emits the link, indicator and derived attributes. |
-| `src/pages/drops/[...id].astro` | The fragment route: prerenders every existing and referenced drop id. |
+| `src/pages/drops/[...id].html.ts` | The fragment route (an endpoint, see Errata): prerenders every existing and referenced drop id. |
 | `src/scripts/drops-client.ts` | Toggle, collapse, word reveal, fade reveal. |
 | `src/styles/_drops.scss` | Global expansion CSS, ported from `the-hyperarticle/house.css`. |
 | `test/*.test.ts` | Unit and build-level tests. |
@@ -95,7 +117,7 @@ test('expansionDomId never contains a slash', () => {
   assert.ok(!expansionDomId(dropName('01-meet-able/p1s1l1')).includes('/'));
 });
 test('dropHref is the route shape', () => {
-  assert.equal(dropHref('01-meet-able', 'p1s1l1'), '/drops/01-meet-able/p1s1l1/');
+  assert.equal(dropHref('01-meet-able', 'p1s1l1'), '/drops/01-meet-able/p1s1l1.html');
 });
 ```
 
@@ -226,7 +248,9 @@ const drops = defineCollection({
   loader: glob({
     pattern: '**/drops/[!_]*.md',
     base: './src/content/chapters',
-    generateId: ({ entry }) => entry.replace(/\/drops\/([^/]+)\.md$/, '$1'),
+    // Both capture groups are needed: the plan's original pattern discarded the
+    // separator slash, yielding `01-meet-ablep1s1l1` and a build that stayed green.
+    generateId: ({ entry }) => entry.replace(/^(.+)\/drops\/([^/]+)\.md$/, '$1/$2'),
   }),
   schema: dropsSchema,
 });
@@ -344,7 +368,9 @@ Assert the children equal the front-matter `term` (D3) and throw otherwise. Emit
 Bind the namespace in `[slug].astro`:
 
 ```astro
-<Content components={{ Drop: (props) => <Drop chapterId={chapter.id} {...props} /> }} />
+<Content components={{ Drop }} />
+// and in chapter.mdx: <Drop chapter="01-meet-able" slug="p1s1l1">Skybow</Drop>
+// A closure here fails with NoMatchingRenderer; the namespace rides on the link.
 ```
 
 Verified to work: MDX resolves `Drop` from `props.components` (§8.1).
@@ -358,7 +384,7 @@ Verified to work: MDX resolves `Drop` from `props.components` (§8.1).
 ### Task 8: Fragment route and referenced-drop inventory
 
 **Files:**
-- Create: `src/pages/drops/[...id].astro`, `test/build.test.ts`
+- Create: `src/pages/drops/[...id].html.ts`, `test/build.test.ts`
 - Modify: `src/lib/drops.ts` (only if a helper is missing)
 
 **Interfaces:**
@@ -369,7 +395,7 @@ Verified to work: MDX resolves `Drop` from `props.components` (§8.1).
 
 Assertions over `dist/` after `npm run build`:
 
-- `dist/drops/01-meet-able/p1s1l1/index.html` exists and contains `<span id="p1s1l1-exp" class="expansion-sentence">The Skybow is the ring`;
+- `dist/drops/01-meet-able/p1s1l1.html` exists and contains `<span id="p1s1l1-exp" class="expansion-sentence">The Skybow is the ring`;
 - it is a **bare fragment**: no `<html`, no `<style`, no `<script`;
 - no `id=` value anywhere under `dist/` contains a `/`;
 - the set of emitted fragments equals the set of `href`s in `dist/chapter/**` — the integrity check of §15;
@@ -386,11 +412,11 @@ Emit `wrapFragment` output, or `missingFragment` when there is no entry (status 
 - [ ] **Step 4: Verify** — Run: `npm run build && npm test` — Expected: both PASS. Then:
 
 ```bash
-curl -s -o /dev/null -w '%{http_code} %{content_type}\n' http://localhost:4321/drops/01-meet-able/p1s1l1/
+curl -s -o /dev/null -w '%{http_code} %{content_type}\n' http://localhost:4321/drops/01-meet-able/p1s1l1.html
 ```
 against `npm run preview` — Expected: `200 text/html; charset=utf-8`.
 
-- [ ] **Step 5: Commit** — `git add "src/pages/drops/[...id].astro" test/build.test.ts src/lib/drops.ts && git commit -m "feat: serve drop fragments and prerender every referenced id"`
+- [ ] **Step 5: Commit** — `git add "src/pages/drops/[...id].html.ts" test/build.test.ts src/lib/drops.ts && git commit -m "feat: serve drop fragments and prerender every referenced id"`
 
 ---
 
@@ -440,7 +466,7 @@ These must be **global**: scoped component styles attach a `data-astro-*` attrib
 Port `handleToggle`, `wrapTextNodes`, `collapseExpansion` and `revealWordByWord` from `the-hyperarticle/index.html`. Two deliberate changes:
 
 - **Reveal:** `handleReveal` reads the `data-drop-reveal` attribute from the inserted element; on `fade` it adds `.expansion-fade` and **skips** the word reveal, so an image drop's caption is not tokenised into `<span class="word">` and typed out (§11).
-- **No leaked listeners:** the prototype attached `document.body.addEventListener('htmx:afterSwap', …, { once: true })` on every toggle, leaking a listener whenever a swap never landed. Use `hx-on:htmx:after-swap="handleReveal(event)"` on the link itself.
+- **No leaked listeners:** the prototype attached `document.body.addEventListener('htmx:afterSwap', …, { once: true })` on every toggle, leaking a listener whenever a swap never landed. Use **one delegated listener registered at module scope**. The `hx-on:htmx:after-swap` on the link that this plan originally prescribed does not work: htmx dispatches on the swap target, which is a sibling of the link for `sentence` and `paragraph` modes.
 
 Collapse stays DOM-only: set `hx-disable`, animate out, remove the node, re-enable (§11).
 
@@ -469,7 +495,7 @@ This step is the honest gap in this plan: the DOM behaviour has **no automated t
 
 ```bash
 npm run preview &
-curl -s -o /dev/null -w '%{http_code} %{content_type}\n' localhost:4321/drops/01-meet-able/p1s1l1/   # 200 text/html; charset=utf-8
+curl -s -o /dev/null -w '%{http_code} %{content_type}\n' localhost:4321/drops/01-meet-able/p1s1l1.html   # 200 text/html;charset=utf-8
 grep -rn "Skybow is the ring" src/ | grep -v '\.md:'   # no output: expansion prose lives only in its .md
 grep -rn "hx-vals" src/ dist/                          # no output
 ```

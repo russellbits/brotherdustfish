@@ -72,7 +72,9 @@ src/content/chapters/
 ```
 
 - A drop's **id** is `<chapter-entry-id>/<name>`, e.g. `01-meet-able/p1s1l1`. The namespace is the chapter entry id — the same string `lib/chapters.ts` already parses — so chapter and drop cannot disagree.
-- Its **URL** is `/drops/<chapter-entry-id>/<name>/`.
+- Its **URL** is `/drops/<chapter-entry-id>/<name>.html`.
+
+> **Erratum.** Originally written as a trailing-slash directory, `…/<name>/`. See §8.4: the fragment route has to be an endpoint, and an endpoint cannot emit `index.html`, so the URL carries an explicit `.html` extension.
 - A file whose name begins with `_` is a template or note, never served. Enforced by the collection's glob pattern, not by convention: `glob()` has no filter callback, so `**/drops/[!_]*.md` is the only available enforcement.
 - No registry, no route list, no content table. Adding a drop file adds a URL.
 
@@ -80,7 +82,9 @@ src/content/chapters/
 
 `src/content.config.ts` gains one collection alongside the existing `chapters`.
 
-- **Loader:** `glob({ pattern: '**/drops/[!_]*.md', base: './src/content/chapters', generateId: ({ entry }) => entry.replace(/\/drops\/([^/]+)\.md$/, '$1') })`. This yields `01-meet-able/p1s1l1`.
+- **Loader:** `glob({ pattern: '**/drops/[!_]*.md', base: './src/content/chapters', generateId: ({ entry }) => entry.replace(/^(.+)\/drops\/([^/]+)\.md$/, '$1/$2') })`. This yields `01-meet-able/p1s1l1`.
+
+> **Erratum.** Originally `replace(/\/drops\/([^/]+)\.md$/, '$1')`, which matches the separator slash *before* `drops` and discards it along with the rest of the match — so `01-meet-able/drops/p1s1l1.md` became `01-meet-ablep1s1l1`, an id no lookup could find. Because `<Drop>` falls back to `mode: inline` when `getEntry` returns nothing, the only visible symptom was `hx-target` pointing at the link instead of the sentence anchor, and **the build still went green**. Both capture groups are needed so the separator survives.
 - **`retainBody`** is left at its default (`true`). The render pipeline consumes `entry.body`, and the chapter scanner consumes the chapters' bodies.
 - **Schema:**
   - `mode: z.enum(['inline', 'sentence', 'paragraph'])` — required (D1).
@@ -91,7 +95,9 @@ YAML gotcha carried into the authoring docs: the PHP front-matter parser was a l
 
 ## 6. The drop markup contract
 
-`wrapFragment(dropId, mode, innerHtml, { reveal })` in `src/lib/drops.ts` is the single source of wrapper truth, used by the fragment route and by any future on-demand route so the two cannot disagree. `reveal` is `'fade'` or `'word'`; when it is `'fade'` the wrapper carries `data-drop-reveal="fade"`, which is what tells the client to skip the word-by-word reveal (§11).
+`wrapFragment(dropId, mode, body: DropBody, { reveal })` in `src/lib/drops.ts` is the single source of wrapper truth, used by the fragment route and by any future on-demand route so the two cannot disagree. `reveal` is `'fade'` or `'word'`; when it is `'fade'` the wrapper carries `data-drop-reveal="fade"`, which is what tells the client to skip the word-by-word reveal (§11).
+
+> **Erratum.** The third parameter was originally a bare `innerHtml` string. Paragraph mode must choose between `<p>` and `<div>`, and recovering that fact from serialized HTML means matching `<p>` with a regular expression — precisely the fragility the flat-rendering note below rejects. The pipeline already holds the tree, so it reports the structure (`DropBody { html, paragraphInner }`) rather than discarding it and re-deriving it.
 
 The DOM id **drops the namespace**: `p1s1l1-exp`, not `01-meet-able/p1s1l1-exp`. A `/` in an `id` breaks every `#selector` that `hx-target` and `handleToggle` depend on. The namespace belongs in the URL and the drop lookup, never in an `id`.
 
@@ -129,11 +135,19 @@ In one document-order traversal it:
 
 ### 8.1 Namespace binding
 
-The chapter route already knows `chapter.id`, so it binds the namespace rather than asking the author or inferring from the URL:
+The namespace rides on an explicit `chapter` prop on every link; the route supplies only the component, and neither the author's URL nor the document has to carry it:
 
 ```astro
-<Content components={{ Drop: (props) => <Drop chapterId={chapter.id} {...props} /> }} />
+<Content components={{ Drop }} />
 ```
+
+```mdx
+<Drop chapter="01-meet-able" slug="p1s1l1">Skybow</Drop>
+```
+
+> **Erratum — the original advice here was wrong, and wrong in an attractive way.** It proposed binding the namespace with `<Content components={{ Drop: (props) => <Drop chapterId={chapter.id} {...props} /> }} />`. That fails the build with `NoMatchingRenderer: Unable to render 'Drop'`: a closure is not a renderer-recognised component, even though MDX does resolve `Drop` from `props.components` (which is what the paragraphs below demonstrate).
+>
+> Binding through `Astro.locals` was also considered, and verified to work — it is constructed per render, so it does not leak between pages. It was rejected because a wrong namespace silently points a drop at the **wrong chapter**, the worst failure this system has. The explicit prop cannot break that way, and a wrong value degrades to the visible "no drop at …" placeholder naming the path it looked for. The cost is that the chapter name is repeated on every link.
 
 **Verified, not assumed.** A failed build of `01-meet-able` produced this compiled MDX:
 
@@ -153,14 +167,13 @@ Everything is derived from the drop's own front matter and slug. No `hx-vals`, w
 
 ```html
 <a id="p1s1l1" class="hx-link"
-   href="/drops/01-meet-able/p1s1l1/"
-   hx-get="/drops/01-meet-able/p1s1l1/"
+   href="/drops/01-meet-able/p1s1l1.html"
+   hx-get="/drops/01-meet-able/p1s1l1.html"
    hx-target="#p1s1" hx-swap="afterend"
    hx-indicator="#ind-p1s1l1"
    data-drop-term="Skybow"
    data-drop-para="1" data-drop-sent="1" data-drop-link="1" data-drop-mode="sentence"
    data-astro-prefetch="false" data-astro-reload
-   hx-on:htmx:after-swap="handleReveal(event)"
    onclick="handleToggle(event,'p1s1l1-exp')">Skybow</a><span class="htmx-indicator" id="ind-p1s1l1">…</span>
 ```
 
@@ -182,9 +195,15 @@ The scan and the audit log both run inside the drops route's `getStaticPaths`, w
 
 ### 8.4 Route rules
 
-- One route: `src/pages/drops/[...id].astro`. The rest parameter is required because ids contain `/`.
+- One route: `src/pages/drops/[...id].html.ts` — an **endpoint**, not an `.astro` page. The rest parameter is required because ids contain `/`, and the `.html` suffix makes the output a real file of that name.
 - **Emit the fragment and nothing else** — no layout, no `<html>`, no `<style>`, no `<script>`. Astro hoists component styles and scripts into a `<head>` that a fragment response does not have, and a stylesheet travelling with every drop defeats the design's purpose.
-- `Content-Type` is `text/html; charset=utf-8` by default for a page route.
+- `Content-Type` is set explicitly by the endpoint: `text/html; charset=utf-8`.
+
+> **Erratum.** Written originally as an `.astro` page route serving `/drops/<chapter>/<name>/`. Two problems, both only visible by building it.
+>
+> First, **Astro prepends `<!DOCTYPE html>` to page routes.** The page route emitted literally `<!DOCTYPE html><span id="p1s1l1-exp"…`, so a page can never satisfy "the fragment and nothing else". A doctype inside a swap target is dropped by the HTML parser, so this was harmless in practice — but it is not a fragment, and it would have shipped as a quiet deviation from the invariant.
+>
+> Second, an endpoint named `[...id].ts` *without* the `.html` suffix emits a file with **no extension and no `index.html`** — so a trailing-slash URL would 404 on a static host and the file's `Content-Type` would be guessed rather than declared. Naming it `[...id].html.ts` emits `dist/drops/<chapter>/<name>.html`, which every static host serves as `text/html`. As a side effect this also proved that a rest parameter can carry a slash-containing id with a literal suffix after it.
 
 ## 9. Render pipeline and sanitization policy
 
@@ -221,7 +240,9 @@ remark-parse → remark-gfm → remark-rehype({allowDangerousHtml: true})
 - **HTMX** is installed as a dependency and imported in a layout `<script>`, so Astro bundles and dedupes it rather than pulling a CDN tag — which also keeps it working if `security.csp` is enabled later.
 - **One module script** ports `handleToggle`, `wrapTextNodes`, `collapseExpansion` and `revealWordByWord`.
 - **Reveal is decided at build time.** If the rendered tree contains an `<img>`, the wrapper carries `data-drop-reveal="fade"`. On swap, the handler checks the inserted element: `fade` adds `.expansion-fade` and **skips** the word-by-word reveal, so an image does not get its caption tokenised into `<span class="word">` and typed out. The server already knows the content, so the decision travels with the fragment instead of being re-derived in the browser.
-- **Listener leak fixed.** The prototype attached `document.body.addEventListener('htmx:afterSwap', …, { once: true })` on *every* toggle, so a click whose swap never landed left a listener queued and they accumulated. This uses `hx-on:htmx:after-swap` on the link, scoped to that element's request.
+- **Listener leak fixed, by one delegated listener.** The prototype attached `document.body.addEventListener('htmx:afterSwap', …, { once: true })` on *every* toggle, so a click whose swap never landed left a listener queued and they accumulated. The reveal now runs from a single listener registered once at module scope, which cannot accumulate by construction.
+
+> **Erratum.** This section originally proposed `hx-on:htmx:after-swap="handleReveal(event)"` on each link, which reads as the tidier, more local design. It cannot work for `sentence` or `paragraph` mode: htmx dispatches `htmx:afterSwap` on the **swap target** (`makeSettleInfo` returns `elts: [target]`, and the sole `triggerEvent` site iterates those), and for those two modes the target is a paragraph-opening anchor or the paragraph itself — a **sibling** of the link, so the event never reaches an `hx-on` listener on the link. Only `inline` mode, where the target *is* the link, would have appeared to work: exactly the kind of partial success that survives review. Verified in htmx 2.0.11's source.
 - **Collapse stays DOM-only**: set `hx-disable` on the link, animate out, remove the node, re-enable. That is what keeps the system free of client state.
 - **No prefetch, no `<ClientRouter />` involvement.** Drop links carry `data-astro-prefetch="false"` (§3.1 item 9) and `data-astro-reload` (§3.1 item 10).
 
