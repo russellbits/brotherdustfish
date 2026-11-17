@@ -65,6 +65,40 @@ const sortedChapters = orderedChapters(await getCollection('chapters'));
     </div>
 </div>
 
+<script>
+    // Mobile only, and only when a chapter was chosen from the contents: dismiss the
+    // disclosure and land the reader at the top of the chapter content rather than
+    // on the header the sidebar leaves above it.
+    const MOBILE = '(max-width: 1023px)';
+    let choseChapter = false;
+
+    document.addEventListener('click', (event) => {
+        const target = event.target;
+        if (!(target instanceof Element)) return;
+
+        const link = target.closest('.toc-disclosure a');
+        if (!link) return;
+
+        choseChapter = true;
+
+        // The sidebar carries `transition:persist`, so it survives the navigation
+        // and an opened disclosure would still be open on the chapter page.
+        const disclosure = link.closest('details');
+        if (disclosure instanceof HTMLDetailsElement) disclosure.open = false;
+    });
+
+    // astro:page-load rather than astro:after-swap: it fires once the new page is
+    // ready and the router has settled the scroll position, so scrolling earlier
+    // would simply be overwritten.
+    document.addEventListener('astro:page-load', () => {
+        if (!choseChapter) return;
+        choseChapter = false;
+
+        if (!window.matchMedia(MOBILE).matches) return;
+        document.querySelector('.main-content')?.scrollIntoView({ block: 'start' });
+    });
+</script>
+
 <style lang="scss">
     .sidebar-content {
         display: flex;
