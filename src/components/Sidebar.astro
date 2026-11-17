@@ -209,26 +209,36 @@ const sortedChapters = orderedChapters(await getCollection('chapters'));
         // The landing page's cover is now a whole screen of flat cover art, centred
         // on the dark stage. Tapping it scrolls to the sign-up, so the form is
         // deliberately below the fold on this page.
+        // A definite box, then `object-fit`. The first version of this put
+        // percentage max-width/max-height on the <img> inside a fit-content flex
+        // item, which is a circular size resolution — the parent's width depends on
+        // the image, and the image's max-width depends on the parent. Browsers
+        // resolve that inconsistently. A definite box has no such ambiguity.
         [data-splash] .cover-trigger {
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            display: block;
             width: 100%;
             // The stage's own vertical padding, so a full-height cover still fits
             // inside one screen.
             height: calc(100dvh - 3rem);
         }
 
-        // `max-width`/`max-height` rather than `object-fit: cover`, deliberately.
-        // The cover is a 1.383 ratio and a phone screen is 1.78-2.17, so filling the
-        // height means scaling to 542px wide on a 390px screen and cropping ~76px
-        // from each side — which clips "A Novel by R. E. Warner", whose text begins
-        // about 75px in from the left edge. It is centred and never cropped instead.
+        [data-splash] .cover-trigger picture {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+
+        // `contain`, deliberately, and never `cover`: the cover is a 1.383 ratio
+        // while a phone screen is 1.78-2.17, so covering the box would scale it to
+        // 542px wide on a 390px screen and crop ~76px from each side — clipping
+        // "A Novel by R. E. Warner", whose text begins about 75px in from the left
+        // edge. `contain` fills the box as far as the ratio allows and centres what
+        // is left, so nothing is ever cropped.
         [data-splash] .cover-trigger img {
-            width: auto;
-            height: auto;
-            max-width: 100%;
-            max-height: 100%;
+            display: block;
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
         }
 
         // A chapter page's cover is a header, not a splash, so it is capped hard.
