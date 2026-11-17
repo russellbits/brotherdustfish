@@ -1,0 +1,76 @@
+// The reading pane is aged paper in light mode.
+//
+// The tonal range is the straight line between two colours: #f7dfc1 where the
+// paper is untouched, and #e3c392 in the blotches. Everything between them lies on
+// that line by construction, which is what makes the paper read as one material
+// rather than as a tint with grey stains in it.
+//
+// How that is arranged:
+//
+//   * Each tile carries its noise entirely in the alpha channel, with the colour
+//     forced to a constant by feColorMatrix. Multiply blending then contributes a
+//     per-pixel multiplier of  1 - o*A + o*A*tint,  so a layer darkens by exactly
+//     `tint` where the noise is opaque and not at all where the noise is clear.
+//   * That constant tint is #EADFC1, chosen because #f7dfc1 x #EADFC1 == #E3C392.
+//     A greyscale tint multiplies every channel by the same factor, which walks
+//     the tones toward the base's own hue and makes the blotches grey
+//     (#d8c3a9-ish) instead of landing on #e3c392.
+//   * feComponentTransfer stretches the noise alpha out to a full 0..1. Raw
+//     fractalNoise clusters hard around the middle — measured, its alpha spans only
+//     about 0.30..0.71 — so without the stretch the light end could never reach the
+//     base colour and the paper would sit in a narrow grey band no matter what base
+//     colour it was given.
+//
+// The rect opacities are solved, not eyeballed: rasterising the three tiles and
+// replaying the blend puts the 5th-percentile tone on #e3c392 (2.0 away in RGB,
+// i.e. imperceptible) at 0.60 / 0.41 / 0.26, while the light end reaches #f7dfc1
+// exactly. Those relative weights are near enough to the original 1 : 0.68 : 0.44
+// that the paper keeps the character it had.
+//
+// Everything is a data URI: no image request, and unlike a fixed-size photograph
+// it never resamples or blurs on a large display. The mottling tiles rather than
+// using percentage-positioned gradient blots because a chapter runs to many
+// viewport heights (chapter 2 is ~25,000px of text) and a blot stretched over that
+// distance stops being a blot, arriving instead as a wash thousands of pixels wide
+// with the next one thousands of pixels further down.
+//
+// `color-interpolation-filters='sRGB'` is stated explicitly on each filter, and
+// it is load-bearing. The SVG default is `linearRGB`, which reinterprets the
+// feColorMatrix constants in linear space and converts the result back, so the
+// tint renders as roughly #ffbb89 rather than #EADFC1 — measured, a 1.0/0.5/0.25
+// constant came back as 255/187/137 instead of 255/128/64. Browsers and librsvg
+// do not agree on that default either, so inheriting it would render differently
+// in different engines. The alpha channel is unaffected by colour interpolation,
+// which is why the solved opacities survive the correction.
+//
+// `#` inside each SVG is percent-encoded (%23) so it survives the Sass tokenizer,
+// and the SVGs use single quotes so each whole value sits inside url("…").
+
+// feColorMatrix constants are #EADFC1 as fractions: 234/255, 223/255, 193/255.
+// The alpha row leaves the noise's stretched alpha untouched.
+
+:root {
+    --pane-base: #f7dfc1;
+    // Softened along with the paper. At the old 0.26 alpha the perimeter was the
+    // darkest thing on the page — darker than any blotch — which no longer matched
+    // a paper this light. Judgement, not measured.
+    --pane-edge: inset 0 0 90px rgba(140, 110, 68, 0.2);
+    --pane-blend: normal, multiply, multiply, multiply;
+    --pane-image:
+        // A gentle lift at the head of the chapter. Sized in px, not percentages,
+        // so it does not stretch into a wash down a long chapter.
+        linear-gradient(180deg, rgba(255, 253, 244, 0.22) 0px, rgba(255, 253, 244, 0) 640px),
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='900' height='900'%3E%3Cfilter id='c' color-interpolation-filters='sRGB'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.006' numOctaves='4' stitchTiles='stitch'/%3E%3CfeComponentTransfer%3E%3CfeFuncA type='linear' slope='2.8' intercept='-0.85'/%3E%3C/feComponentTransfer%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 0.917647 0 0 0 0 0.874510 0 0 0 0 0.756863 0 0 0 1 0'/%3E%3C/filter%3E%3Crect width='900' height='900' filter='url(%23c)' opacity='0.6'/%3E%3C/svg%3E"),
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='380' height='380'%3E%3Cfilter id='m' color-interpolation-filters='sRGB'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.015' numOctaves='5' stitchTiles='stitch'/%3E%3CfeComponentTransfer%3E%3CfeFuncA type='linear' slope='2.8' intercept='-0.85'/%3E%3C/feComponentTransfer%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 0.917647 0 0 0 0 0.874510 0 0 0 0 0.756863 0 0 0 1 0'/%3E%3C/filter%3E%3Crect width='380' height='380' filter='url(%23m)' opacity='0.41'/%3E%3C/svg%3E"),
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='f' color-interpolation-filters='sRGB'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.95' numOctaves='4' stitchTiles='stitch'/%3E%3CfeComponentTransfer%3E%3CfeFuncA type='linear' slope='2.8' intercept='-0.85'/%3E%3C/feComponentTransfer%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 0.917647 0 0 0 0 0.874510 0 0 0 0 0.756863 0 0 0 1 0'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23f)' opacity='0.26'/%3E%3C/svg%3E");
+}
+
+:root[data-theme="dark"] {
+    // Dark mode opts out of the paper entirely and goes back to the flat
+    // background it had before: a bright cream page is the thing people turn dark
+    // mode on to avoid.
+    --pane-base: var(--bg-color);
+    --pane-edge: none;
+    --pane-blend: normal;
+    --pane-image: none;
+}

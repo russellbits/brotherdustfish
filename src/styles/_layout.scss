@@ -31,12 +31,21 @@
 
 .main-content {
     width: 1fr;
-    background-color: var(--bg-color);
+    // Aged paper in light mode; the flat background in dark. The tokens live in
+    // _parchment.scss. The sidebar is unaffected: it composites its own
+    // translucent black over .layout-wrapper's --bg-color, not over this pane.
+    background-color: var(--pane-base);
+    background-image: var(--pane-image);
+    background-blend-mode: var(--pane-blend);
+    box-shadow: var(--pane-edge);
     display: flex;
     flex-direction: column;
     align-items: center;
     overflow-y: auto;
     transition: background-color 0.4s ease, color 0.4s ease;
+    // Named so the view transition can animate the reading pane on its own while
+    // the rest of the layout stays put (see styles/_transitions.scss).
+    view-transition-name: chapter-content;
 }
 
 .nav-toggle {
