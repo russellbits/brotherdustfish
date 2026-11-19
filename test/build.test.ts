@@ -249,6 +249,26 @@ test('the mobile contents strip is black, fixed, and sized by the one token', { 
   assert.ok(users >= 3, `--toc-bar is used by ${users} rules, expected at least 3`);
 });
 
+// The overlay was styled in two places — here and in CoverZoom.astro — where the
+// component won on specificity and the global rule quietly filled any property it did
+// not set. One owner, so there is nothing to reconcile.
+test('the cover overlay is styled in one place, with the values that work', { skip }, () => {
+  const css = stylesheet();
+  const component = readFileSync(resolve(process.cwd(), 'src/components/CoverZoom.astro'), 'utf8');
+
+  // Global now, so these selectors carry no scope attribute.
+  assert.match(css, /\.cover-zoom\{[^}]*position:fixed/);
+  assert.match(css, /\.cover-zoom\.is-visible\{/);
+
+  // The three values deliberately kept from the component rather than the legacy
+  // block: 1000 would sit under the toggles, and a hardcoded white would make a white
+  // sheet in dark mode. `#fadeTarget` exists nowhere, so it could never show at all.
+  assert.match(css, /\.cover-zoom\{[^}]*z-index:1200/);
+  assert.match(css, /\.cover-zoom\{[^}]*background-color:var\(--cover-overlay\)/);
+
+  assert.ok(!component.includes('lang="scss"'), 'CoverZoom.astro still carries a style block');
+});
+
 test('the toggle is two thirds scale on a stacked layout, and the font buttons match the nav button', { skip }, () => {
   const css = stylesheet();
 

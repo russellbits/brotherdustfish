@@ -1,3 +1,11 @@
+// `@use`, not `@import`, is what makes a token visible in this file: the module
+// system scopes members to the file that declares the dependency, so importing
+// `_variables.scss` from house.scss does nothing for us here. `as *` because the
+// file reads the tokens unqualified. The `@use` must precede the CSS `@import`
+// below; Sass hoists that `@import` back to the top of the output.
+@use './variables' as *;
+@use './breakpoint' as *;
+
 @import url('https://fonts.googleapis.com/css2?family=Georgia:wght@400;700&display=swap');
 
 article {

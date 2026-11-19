@@ -1,0 +1,55 @@
+@use './variables';
+@use './nav';
+@use './mobile';
+@use './parchment';
+@use './drops';
+@use './typography';
+@use './layout';
+@use './transitions';
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+/* body type size lives in _mobile.scss, alongside the site's one breakpoint */
+
+/* The cover interstitial is styled here rather than in CoverZoom.astro, deliberately:
+   the overlay is page chrome present on every page, and one owner is easier to track
+   than two. It is not a fetched fragment, so it has none of the scope problems the
+   drop expansions have. */
+.cover-zoom {
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.5s ease, visibility 0.5s ease;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    // 1200, not the 1000 this carried as legacy CSS: the fixed toggles sit at 1001
+    // (.nav-toggle) and 1100 (.page-controls), so anything lower leaves them
+    // clickable *through* what should be a full-page interstitial.
+    z-index: 1200;
+    // The token, not a hardcoded white — a white sheet in dark mode is the bug this
+    // replaces.
+    background-color: var(--cover-overlay);
+    cursor: pointer;
+}
+
+.cover-zoom img {
+    max-width: 90%;
+    max-height: 90%;
+    object-fit: contain;
+}
+
+// The state the overlay toggles. As legacy CSS this was `#fadeTarget.is-visible` — an
+// id that exists nowhere in this site, so the overlay could never appear at all.
+.cover-zoom.is-visible {
+    opacity: 1;
+    visibility: visible;
+}

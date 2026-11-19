@@ -25,6 +25,8 @@ const firstChapter = orderedChapters(await getCollection('chapters'))[0];
 </Layout>
 
 <style lang="scss">
+    @use '../styles/breakpoint' as *;
+
     .landing-content {
         display: flex;
         flex-direction: column;

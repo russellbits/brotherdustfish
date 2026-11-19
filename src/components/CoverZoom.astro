@@ -63,35 +63,5 @@
     });
 </script>
 
-<style lang="scss">
-    .cover-zoom {
-        opacity: 0;
-        visibility: hidden;
-        transition: opacity 0.5s ease, visibility 0.5s ease;
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        // Must sit above both fixed toggles (.nav-toggle at 1001, .theme-toggle
-        // at 1100) or they stay clickable through what should be a full-page
-        // interstitial — and clicking them would not dismiss the cover.
-        z-index: 1200;
-        background-color: var(--cover-overlay);
-        cursor: pointer;
-
-        img {
-            max-width: 90%;
-            max-height: 90%;
-            object-fit: contain;
-        }
-
-        &.is-visible {
-            opacity: 1;
-            visibility: visible;
-        }
-    }
-</style>
+<!-- The overlay's styling lives in src/styles/house.scss, which is its one owner.
+     This component is markup and behaviour only. -->

@@ -1,0 +1,22 @@
+@use './breakpoint' as *;
+
+// The site has one breakpoint (see _breakpoint.scss). Desktop is the base and this
+// is the max-width override, the same shape _layout.scss uses.
+//
+// `body` is <body class="layout-wrapper">, so display, direction, width and
+// overflow belong to .layout-wrapper — a class beats this element selector, so
+// restating them here would be dead code. What the element does own is the
+// inherited type size, which _drops.scss's em-based sizes depend on.
+//
+// The old `padding: 15px` and the archelux background image came over from the
+// static site and are gone: the padding inset a layout that is meant to be flush,
+// and the image is superseded by the parchment pane in _parchment.scss (its
+// relative url() also resolved against the bundled /_astro/ stylesheet, so it
+// 404'd).
+body {
+    font-size: 20px;
+
+    @media (max-width: $tablet-max) {
+        font-size: 16px;
+    }
+}

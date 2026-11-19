@@ -1,6 +1,8 @@
 # Brother Dustfish
 
-This is the web site for my newest novel, "Brother Dustfish"
+## This is an Interactive (and expandable) Novel
+
+This is the web site for my newest novel, "Brother Dustfish". While there is a version of the book that goes from A to Z and has a beginning middle and end (and will be available in book form soon)—*this* version is a touch more interactive. It uses a hyperarticle/hyperstory concept and HTMX to "drop in" content when the user looks for more information behind a link.
 
 ## Excerpt (If You're Curious)
 
