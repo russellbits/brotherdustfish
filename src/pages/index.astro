@@ -1,6 +1,7 @@
 ---
 import { getCollection } from 'astro:content';
 import Layout from '../components/Layout.astro';
+import Ribbon from '../components/Ribbon.astro';
 import SignupForm from '../components/SignupForm.astro';
 import { chapterHref, orderedChapters } from '../lib/chapters';
 
@@ -8,6 +9,7 @@ const firstChapter = orderedChapters(await getCollection('chapters'))[0];
 ---
 
 <Layout title="Brother Dustfish — A Novel by R.E. Warner" splash>
+    <Ribbon />
     <div class="landing-content">
         <h1>Brother Dustfish</h1>
         <h2>Greetings!</h2>

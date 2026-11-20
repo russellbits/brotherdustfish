@@ -1,5 +1,5 @@
 {
-  "name": "brother-dustfish",
+  "name": "brotherdustfish-com",
   "type": "module",
   "scripts": {
     "dev": "astro dev --host 0.0.0.0",
