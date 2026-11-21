@@ -63,7 +63,7 @@
 // positioning so the two cannot drift apart.
 .page-controls {
     position: fixed;
-    top: 20px;
+    bottom: 20px;
     right: 20px;
     z-index: 1100;
     display: flex;
@@ -144,7 +144,7 @@
         // horizontal padding at this width rather than doubling it.
         padding: 0 1.25rem;
     }
-    
+
     .nav-toggle {
         display: none; // Hide toggle on mobile as it's just a vertical stack
     }

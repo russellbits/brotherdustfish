@@ -74,8 +74,8 @@ const { title = "Brother Dustfish" } = Astro.props;
         <!-- One fixed column: the theme switch, then the text-size pair beneath it.
              The column owns the positioning, so the two cannot drift apart. -->
         <div class="page-controls">
-            <ThemeToggle />
             <FontSizeControls />
+            <ThemeToggle />
         </div>
         <script>
             // Delegate from document so the toggle keeps working after
