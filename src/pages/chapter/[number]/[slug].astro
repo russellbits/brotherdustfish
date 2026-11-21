@@ -1,30 +1,8 @@
 ---
-import { getCollection, render } from 'astro:content';
+import { getCollection } from 'astro:content';
 import Layout from '../../../components/Layout.astro';
-import ChapterNav from '../../../components/ChapterNav.astro';
-import LifeBreaks from '../../../components/LifeBreaks.astro';
-import { chapterParts, type Chapter } from '../../../lib/chapters';
-import { duplicateDropReferences } from '../../../lib/drop-references';
-import Drop from '../../../components/Drop.astro';
-
-// Chapters that ship `images/chapter-image.png` get that art rendered at the top
-// of the page. Resolved by Vite at build time, so each image is bundled and
-// content-hashed like an ordinary import instead of being fetched from a guessed
-// /public path. Chapters without the file simply match nothing.
-const chapterImages = import.meta.glob('../../../content/chapters/*/images/chapter-image.png', {
-    eager: true,
-    query: '?url',
-    import: 'default',
-}) as Record<string, string>;
-
-// Keys look like `../../../content/chapters/01-meet-able/images/chapter-image.png`;
-// index them by the chapter folder, which is also the collection entry id.
-const imagesByFolder = new Map(
-    Object.entries(chapterImages).map(([key, url]) => [
-        /\/content\/chapters\/([^/]+)\/images\//.exec(key)![1],
-        url,
-    ]),
-);
+import ChapterView from '../../../components/ChapterView.astro';
+import { chapterParts, isHomeChapter, type Chapter } from '../../../lib/chapters';
 
 interface Props {
     chapter: Chapter;
@@ -42,77 +20,14 @@ export async function getStaticPaths() {
 }
 
 const { chapter } = Astro.props;
-const { Content } = await render(chapter);
-const chapterImage = imagesByFolder.get(chapter.id);
 
-// Review Focus 2: two links sharing a slug would emit two elements with the same
-// DOM id and two requests for one fragment. Checked here rather than inside
-// <Drop> so it is stateless, and runs once per chapter render.
-const duplicates = duplicateDropReferences([{ id: chapter.id, body: chapter.body }]);
-
-if (duplicates.length > 0) {
-    throw new Error(
-        `${chapter.id}/chapter.mdx references ${duplicates.join(', ')} more than once. ` +
-            `Each slug must appear once, so that every link id is unique.`,
-    );
+// The opening chapter's canonical URL is the site root, and two URLs for one
+// chapter is one too many: this route sends the reader to it.
+if (isHomeChapter(chapter)) {
+    return Astro.redirect('/', 301);
 }
 ---
 
 <Layout title={`${chapter.data.title} — Brother Dustfish`}>
-    <article class="chapter-content">
-        {chapterImage && (
-            <img
-                class="chapter-image"
-                src={chapterImage}
-                alt={`Illustration for Chapter ${chapter.data.number}: ${chapter.data.title}`}
-            />
-        )}
-        <div class="chapter-ref">Chapter {chapter.data.number}</div>
-        <h1>{chapter.data.title}</h1>
-        <div class="chapter-summary">
-            <h4>{chapter.data.summary}</h4>
-        </div>
-        <div class="chapter-body">
-            <Content components={{ Drop }} />
-        </div>
-        <ChapterNav currentNumber={chapter.data.number} />
-    </article>
-    <LifeBreaks />
+    <ChapterView chapter={chapter} />
 </Layout>
-
-<style lang="scss">
-    @use '../../../styles/breakpoint' as *;
-
-    .chapter-content {
-        // Center the article in the space the sidebar leaves, rather than relying
-        // on the global `article` rule to supply the auto margins.
-        width: 100%;
-        max-width: 120ch;
-        margin-inline: auto;
-        padding: 0 1rem;
-
-        @media (max-width: $tablet-max) {
-            // .main-content supplies the gutter on mobile, so keeping this one
-            // would double it to ~36px a side.
-            padding: 0;
-        }
-
-        .chapter-image {
-            display: block;
-            margin: 0 auto 2rem;
-            max-width: min(100%, 22rem);
-            height: auto;
-        }
-
-        .chapter-summary {
-            text-align: center;
-            margin-bottom: 3rem;
-            h4 {
-                font-style: italic;
-                font-weight: normal;
-                max-width: 60ch;
-                margin: 0 auto;
-            }
-        }
-    }
-</style>

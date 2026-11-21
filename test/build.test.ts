@@ -15,9 +15,10 @@ import { join, relative, resolve } from 'node:path';
 // not a claim about what astro.config.mjs sets.
 const config = (await import('../astro.config.mjs')).default;
 const DIST = resolve(process.cwd(), config.outDir ?? 'dist');
-const PAGE = join(DIST, 'chapter/01/meet-able/index.html');
+// Chapter 1 is the site's home page, so this is where its content is asserted.
+const PAGE = join(DIST, 'index.html');
 const FRAGMENT = join(DIST, 'drops/01-meet-able/p1s1l1.html');
-// Keyed on the chapter page, NOT on the fragment: if the guard also required the
+// Keyed on the home page, NOT on the fragment: if the guard also required the
 // fragment to exist, a missing fragment route would skip these tests instead of
 // failing them — which is precisely the regression they exist to catch.
 // Names the directory it looked in, so a mismatch between this and outDir is
@@ -34,9 +35,28 @@ function walk(dir: string): string[] {
   });
 }
 
+// Astro's prerendered redirect is an HTML document whose entire content is a
+// refresh to the destination, so there is nothing else in it to assert against.
+const redirectTarget = (file: string): string | null =>
+  readFileSync(file, 'utf8').match(/<meta http-equiv="refresh" content="0;url=([^"]*)">/)?.[1] ??
+  null;
+
+/**
+ * The documents a reader lands on and reads: every built page except the `drops/`
+ * fragments, which are partials swapped into a page, and the redirect pages,
+ * which carry no chrome of their own. Walking the whole site rather than one
+ * directory is what keeps the home page inside these assertions — chapter 1 lives
+ * at `/`, so a walk of `chapter/` alone would quietly assert nothing about it.
+ */
+const renderedPages = (): string[] =>
+  walk(DIST)
+    .filter((file) => file.endsWith('.html'))
+    .filter((file) => !file.startsWith(join(DIST, 'drops')))
+    .filter((file) => redirectTarget(file) === null);
+
 // ── the link ─────────────────────────────────────────────────────────────────
 
-test('the chapter page carries the drop link with everything derived', { skip }, () => {
+test("the home page carries chapter 1's drop link with everything derived", { skip }, () => {
   const page = html();
 
   for (const fragment of [
@@ -79,7 +99,7 @@ test('htmx is bundled rather than pulled from a CDN', { skip }, () => {
   assert.ok(bundled, 'htmx does not appear in any built script');
 });
 
-test('the chapter page loads its own module script', { skip }, () => {
+test('the home page loads its own module script', { skip }, () => {
   assert.match(html(), /<script[^>]+type="module"[^>]+src="\/_astro\//);
 });
 
@@ -97,6 +117,33 @@ test('the visible text is unchanged by the mechanism around it', { skip }, () =>
 
   assert.ok(text.includes('glowing Skybow of the Goliaths'));
   assert.ok(text.includes('beneath the great, glowing Skybow'));
+});
+
+// ── the home page ────────────────────────────────────────────────────────────
+
+test('the home page is chapter 1 rather than a landing page', { skip }, () => {
+  const page = html();
+
+  assert.match(page, /<title>The Desert of Idex Mortez — Brother Dustfish<\/title>/);
+  assert.match(page, /class="chapter-ref"[^>]*>Chapter 1</);
+  assert.ok(!page.includes('Start Reading'), 'the landing page CTA is still on the home page');
+});
+
+// Chapter 1 has one canonical URL, so the routes it used to live at send the
+// reader on. `/chapter/01/` reaching it in one hop is the assertion that the
+// number route builds its destination with chapterHref rather than by hand.
+test('chapter 1 is served only from the home page', { skip }, () => {
+  assert.equal(redirectTarget(join(DIST, 'chapter/01/meet-able/index.html')), '/');
+  assert.equal(redirectTarget(join(DIST, 'chapter/01/index.html')), '/');
+});
+
+// The sidebar owns the sign-up now that there is no landing block to hold a
+// second copy, and the sidebar is in the layout — so every page has exactly one.
+test('every page a reader lands on offers the sign-up exactly once', { skip }, () => {
+  for (const file of renderedPages()) {
+    const count = readFileSync(file, 'utf8').split('class="signup-form"').length - 1;
+    assert.equal(count, 1, `${relative(DIST, file)} renders the sign-up form ${count} times`);
+  }
 });
 
 // ── the fragment ─────────────────────────────────────────────────────────────
@@ -136,8 +183,7 @@ test('every emitted fragment has a link, and every link has a fragment', { skip 
   );
 
   const linked = new Set(
-    walk(join(DIST, 'chapter'))
-      .filter((file) => file.endsWith('.html'))
+    renderedPages()
       .flatMap((file) => [...readFileSync(file, 'utf8').matchAll(/href="(\/drops\/[^"]*)"/g)])
       .map(([, href]) => href),
   );
@@ -148,8 +194,8 @@ test('every emitted fragment has a link, and every link has a fragment', { skip 
 // Review Focus 4: a sentence- or paragraph-mode drop whose anchor does not exist
 // renders a fragment that nothing swaps in, and no error anywhere. This is the
 // assertion that catches it.
-test('every swap target in a chapter page exists in that page', { skip }, () => {
-  for (const file of walk(join(DIST, 'chapter')).filter((f) => f.endsWith('.html'))) {
+test('every swap target in a page exists in that page', { skip }, () => {
+  for (const file of renderedPages()) {
     const page = readFileSync(file, 'utf8');
 
     for (const [, target] of page.matchAll(/hx-target="#([^"]+)"/g)) {
@@ -163,14 +209,20 @@ test('every swap target in a chapter page exists in that page', { skip }, () => 
 
 // ── styles ───────────────────────────────────────────────────────────────────
 
+/**
+ * The stylesheet the home page loads, read from the page rather than guessed from
+ * a filename. Vite names the asset after the module that owns the shared CSS, and
+ * that name moved from `Layout.` to `ChapterView.` when the chapter renderer was
+ * extracted out of the route: a name-based lookup read the wrong file and failed
+ * every assertion in this section. Following the page's own href also means these
+ * assertions run against the CSS a reader actually receives, and that a page which
+ * links no stylesheet — or links a missing one — fails here.
+ */
 const stylesheet = () => {
-  const dir = join(DIST, '_astro');
-  const file = existsSync(dir)
-    ? readdirSync(dir).find((name) => name.startsWith('Layout.') && name.endsWith('.css'))
-    : undefined;
+  const match = html().match(/href="(\/_astro\/[^"]+\.css)"/);
 
-  assert.ok(file, 'the built stylesheet is missing');
-  return readFileSync(join(dir, file), 'utf8');
+  assert.ok(match, 'the home page links no stylesheet');
+  return readFileSync(join(DIST, match[1].replace(/^\//, '')), 'utf8');
 };
 
 test('every expansion class is present in the stylesheet', { skip }, () => {
@@ -203,10 +255,6 @@ test('the expansion rules are global, not scoped to a component', { skip }, () =
   ].map((match) => match[1]);
 
   assert.deepEqual(scoped, []);
-});
-
-test('the chapter page loads that stylesheet', { skip }, () => {
-  assert.match(html(), /href="\/_astro\/Layout\.[^"]+\.css"/);
 });
 
 // ── page chrome ──────────────────────────────────────────────────────────────

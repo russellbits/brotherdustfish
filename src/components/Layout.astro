@@ -8,15 +8,9 @@ import '../styles/house.scss';
 
 interface Props {
     title?: string;
-    /**
-     * True only on the landing page. Below 1024px that page's sidebar becomes the
-     * site's cover — cover art and the sign-up form on a full-height stage —
-     * while chapter pages keep a compact header so the prose starts near the top.
-     */
-    splash?: boolean;
 }
 
-const { title = "Brother Dustfish", splash = false } = Astro.props;
+const { title = "Brother Dustfish" } = Astro.props;
 ---
 
 <html lang="en">
@@ -72,7 +66,7 @@ const { title = "Brother Dustfish", splash = false } = Astro.props;
                 <polygon points="11 2 11 14 4 8" fill="currentColor" />
             </svg>
         </div>
-        <Sidebar splash={splash} />
+        <Sidebar />
         <main class="main-content">
             <slot />
         </main>

@@ -19,9 +19,9 @@ import breakpointSource from '../styles/_breakpoint.scss?raw';
  * shipped verbatim as the string the `?raw` import returns.
  *
  * 1366px is the widest iPad in landscape, so every tablet stacks. Below it the
- * sidebar becomes the landing page's cover and, on chapter pages, a compact
- * header, with the reading pane at full width; above it the sidebar is the 350px
- * column it has always been. The cost is that a 1366px laptop stacks too — if that
+ * sidebar becomes the site's cover — a full-height stage with the sign-up just
+ * past the fold — with the reading pane at full width; above it the sidebar is
+ * the 350px column it has always been. The cost is that a 1366px laptop stacks too — if that
  * matters more than covering the largest iPad, lower the declaration; it is the
  * only place to change.
  *

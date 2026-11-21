@@ -27,7 +27,13 @@
     color: var(--text-color-light);
     transition: transform $transition-speed ease-in-out,
         background-color 0.4s ease;
-    overflow: hidden;
+    // The column scrolls: the sign-up sits between the cover and the contents, so
+    // the list runs past a short viewport. Overflowing vertically is what made the
+    // contents unreachable while this said `hidden`. The horizontal half stays
+    // hidden because the contents' own 5rem left margin overhangs the column, and
+    // without clipping that becomes a sideways scrollbar.
+    overflow-x: hidden;
+    overflow-y: auto;
 
     &.hidden {
         transform: translateX(-100%);
@@ -134,8 +140,8 @@
     .main-content {
         width: 100%;
         // The reading pane is the screen minus a small gutter. This is the single
-        // source of that gutter on mobile: .chapter-content and .landing-content
-        // drop their own horizontal padding at this width rather than doubling it.
+        // source of that gutter on mobile: .chapter-content drops its own
+        // horizontal padding at this width rather than doubling it.
         padding: 0 1.25rem;
     }
     

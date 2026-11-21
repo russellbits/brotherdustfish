@@ -30,14 +30,10 @@
         // Opening: the sidebar cover. It is a <button>, so there is no default action
         // to suppress and the ClientRouter never sees an anchor.
         //
-        // Suppressed only in the splash, where the cover already fills the screen and
-        // tapping it scrolls to the sign-up — enlarging an image that is already
-        // screen-sized achieves nothing. On a chapter page the cover is a 120px
-        // header image at every width, and enlarging it is the whole point.
-        //
-        // Gating on the page rather than on the viewport is what keeps that control
-        // alive: keyed on width, it was dead at every size below the breakpoint, on
-        // chapter pages included.
+        // Suppressed below the breakpoint, where the cover already fills the screen
+        // and tapping it scrolls to the sign-up — enlarging an image that is already
+        // screen-sized achieves nothing. Above it the cover is a 120px thumbnail in
+        // the sidebar column, and enlarging it is the whole point.
         const trigger = event.target.closest('#coverTrigger');
         if (trigger) {
             // Below the breakpoint the cover is a full screen of art on every page, so

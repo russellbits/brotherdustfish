@@ -1,6 +1,6 @@
 ---
-// The email sign-up. Extracted from index.astro so the mobile splash and the
-// landing block share one definition rather than two that drift apart.
+// The email sign-up. Rendered once, by the sidebar, so the desktop column and the
+// mobile cover stage cannot drift apart.
 ---
 
 <form class="signup-form">
@@ -19,7 +19,8 @@
 
         @media (max-width: $tablet-max) {
             // Tightened so the form and the disclosure below it clear the fold
-            // beneath the splash's cover art.
+            // beneath the cover art, which is the full first screen below the
+            // breakpoint.
             margin: 1.25rem 0;
         }
 

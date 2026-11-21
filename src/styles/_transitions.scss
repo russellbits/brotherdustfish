@@ -13,7 +13,7 @@
     --vt-ease: cubic-bezier(0.65, 0, 0.35, 1);
     --vt-shift: 15%;
 
-    // Forward is the default, including the first load and landing -> chapter 1.
+    // Forward is the default, including the first load.
     --vt-old: vt-exit-left;
     --vt-new: vt-enter-right;
 }

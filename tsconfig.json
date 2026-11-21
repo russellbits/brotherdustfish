@@ -15,5 +15,5 @@
   // .astro/types.d.ts, which supplies the ImportMetaEnv types that dropHref's
   // `import.meta.env?.BASE_URL` relies on. Excluding it would untype that
   // expression and fail `astro check`.
-  "exclude": ["dist", "node_modules", "the-hyperarticle", "stylesheets", "script.js", ".superpowers"]
+  "exclude": ["build", "node_modules", "the-hyperarticle", "stylesheets", "script.js", ".superpowers"]
 }

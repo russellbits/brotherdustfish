@@ -2,114 +2,22 @@
 import { getCollection } from 'astro:content';
 import Layout from '../components/Layout.astro';
 import Ribbon from '../components/Ribbon.astro';
-import SignupForm from '../components/SignupForm.astro';
-import { chapterHref, orderedChapters } from '../lib/chapters';
+import ChapterView from '../components/ChapterView.astro';
+import { isHomeChapter } from '../lib/chapters';
 
-const firstChapter = orderedChapters(await getCollection('chapters'))[0];
+// The home page is chapter 1. The chapter's own route redirects here, so this is
+// the only place it renders — and replacing the front door later means replacing
+// this file, not unpicking a chapter.
+const home = (await getCollection('chapters')).find(isHomeChapter);
+
+if (!home) {
+    throw new Error(
+        'No chapter folder numbered 01: the home page renders it and has nothing to show.',
+    );
+}
 ---
 
-<Layout title="Brother Dustfish — A Novel by R.E. Warner" splash>
+<Layout title={`${home.data.title} — Brother Dustfish`}>
     <Ribbon />
-    <div class="landing-content">
-        <h1>Brother Dustfish</h1>
-        <h2>Greetings!</h2>
-        <p>The book is nearing completion (as of May 23, 2026)!</p>
-        <p>Enter your email below to get a release notification.</p>
-
-        <div class="landing-signup">
-            <SignupForm />
-        </div>
-
-        <div class="start-reading">
-            <a href={chapterHref(firstChapter)} class="cta-button">Start Reading</a>
-        </div>
-    </div>
+    <ChapterView chapter={home} />
 </Layout>
-
-<style lang="scss">
-    @use '../styles/breakpoint' as *;
-
-    .landing-content {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        text-align: center;
-        // min-height, not a fixed height: a fixed height clips content taller
-        // than the viewport rather than letting it scroll, and on mobile `vh` is
-        // larger than what is actually visible once the address bar is counted.
-        // The vh line is the fallback for browsers without dvh.
-        min-height: 100vh;
-        min-height: 100dvh;
-        padding: 2rem;
-
-        h1 {
-            font-family: 'Georgia', serif;
-            font-size: 3rem;
-            margin-bottom: 1rem;
-        }
-        h2 {
-            font-family: 'Georgia', serif;
-            font-size: 2rem;
-            margin-bottom: 1rem;
-        }
-        p {
-            font-family: 'Georgia', serif;
-            margin-bottom: 0.5rem;
-        }
-
-        .landing-signup {
-            // Below 1024px the sidebar is the splash and carries its own copy of
-            // the form, so this one is hidden rather than appearing twice on the
-            // same screen. Above 1024px there is no splash, and this is the only
-            // copy. The two cannot be merged into one instance because they live
-            // in different containers.
-            @media (max-width: $tablet-max) {
-                display: none;
-            }
-        }
-
-        .start-reading {
-            margin-top: 3rem;
-
-            .cta-button {
-                font-family: 'Georgia', serif;
-                font-size: 1.5rem;
-                padding: 1rem 2rem;
-                background: var(--text-color);
-                color: var(--bg-color);
-                text-decoration: none;
-                border-radius: 4px;
-                transition: background-color 0.3s ease, color 0.3s ease;
-
-                &:hover {
-                    background: var(--accent-color);
-                    color: var(--accent-contrast);
-                }
-            }
-        }
-
-        @media (max-width: $tablet-max) {
-            // The horizontal gutter belongs to .main-content on mobile; keeping
-            // this block's own side padding would double it.
-            padding: 1.5rem 0;
-
-            // The cover art carries the book's identity on mobile, and the
-            // sidebar's wordmark is hidden there, so this repeats a title the
-            // reader has already seen. Visually hidden rather than
-            // `display: none` so the page keeps a level-one heading for assistive
-            // technology — the cover image's alt text names the book too.
-            h1 {
-                position: absolute;
-                width: 1px;
-                height: 1px;
-                padding: 0;
-                margin: -1px;
-                overflow: hidden;
-                clip-path: inset(50%);
-                white-space: nowrap;
-                border: 0;
-            }
-        }
-    }
-</style>

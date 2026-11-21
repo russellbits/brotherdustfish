@@ -5,29 +5,18 @@ import { TABLET_QUERY } from '../lib/breakpoints';
 import SignupForm from './SignupForm.astro';
 import TocList from './TocList.astro';
 
-interface Props {
-    /**
-     * True on the landing page. Below 1024px that page's sidebar is the site's
-     * cover: a full-height stage holding the cover art and the sign-up form.
-     * Chapter pages get a compact header instead, so that arriving at a chapter
-     * never makes the reader scroll a whole screen before reaching any prose.
-     */
-    splash?: boolean;
-}
-
-const { splash = false } = Astro.props;
 const sortedChapters = orderedChapters(await getCollection('chapters'));
 ---
 
-<div class="sidebar" transition:persist id="sidebar" data-splash={splash ? 'true' : undefined}>
+<div class="sidebar" transition:persist id="sidebar">
     <div class="sidebar-content">
         <h1 class="book-title"><a href="/">Brother Dustfish</a></h1>
         <!-- A button, not <a href="#">: the ClientRouter intercepts any click on
              `a, area` and treats a same-page href as a real navigation, which
              swapped the body out from under the freshly opened overlay. -->
         <!-- <picture>, not a swapped src, so a phone downloads only the art it
-             renders: the splash wants the large cover, while the desktop sidebar
-             and the chapter-page header keep the 100 KB thumbnail. -->
+             renders: below the breakpoint the cover is the front door and wants the
+             large flat art, while the desktop sidebar keeps the 100 KB thumbnail. -->
         <button type="button" id="coverTrigger" class="cover-trigger" aria-label="Show the cover larger">
             <picture>
                 <!-- Below the breakpoint the cover is the front door of every page, so
@@ -41,13 +30,12 @@ const sortedChapters = orderedChapters(await getCollection('chapters'));
             </picture>
         </button>
 
-        {
-            splash && (
-                <div class="splash-signup">
-                    <SignupForm />
-                </div>
-            )
-        }
+        <!-- One sign-up for the whole site. On desktop it sits below the cover in
+             the column; below the breakpoint it is the reason the cover stage
+             scrolls, sitting just past the fold. -->
+        <div class="cover-signup">
+            <SignupForm />
+        </div>
 
         <!-- The table of contents is rendered twice on purpose: a visible list on
              desktop, and a native disclosure below it. A single <details> cannot
@@ -117,9 +105,8 @@ const sortedChapters = orderedChapters(await getCollection('chapters'));
         if (!window.matchMedia(STACKED).matches) return;
 
         // The cover is a full screen of art on every page, so a tap has to lead
-        // somewhere: to the sign-up on the landing page, to the chapter otherwise.
-        const signup = document.querySelector('.splash-signup');
-        (signup ?? document.querySelector('.main-content'))?.scrollIntoView({
+        // somewhere: to the sign-up, which sits just past the fold.
+        document.querySelector('.cover-signup')?.scrollIntoView({
             behavior: 'smooth',
             block: 'start',
         });
@@ -199,45 +186,45 @@ const sortedChapters = orderedChapters(await getCollection('chapters'));
     }
 
     @media (max-width: $tablet-max) {
-        // The landing page's sidebar is the site's cover: a full-height stage
-        // whose contents are centered down the screen.
-        [data-splash] .sidebar-content {
+        // Below the breakpoint the sidebar is the site's cover: a full-height stage
+        // whose contents are centered down the screen, with the sign-up just past
+        // the fold. It is the same stage on every page, so the cover's height
+        // calculation below is right everywhere.
+        .sidebar-content {
             justify-content: center;
+            gap: 1rem;
             // dvh, not vh: on mobile Safari `vh` includes the address bar, so the
             // stage would be taller than the screen and clipped. The vh line is
             // the fallback for browsers without dvh.
             min-height: 100vh;
             min-height: 100dvh;
+            // 48px above the cover and none below: the total is the 3rem the
+            // cover's own height calculation subtracts.
             padding: 48px 0 0 0;
         }
 
-        // The cover carries the book's identity, so the wordmark is redundant on every
-        // page below the breakpoint — it was the second "Brother Dustfish" on the
-        // landing page, the other being the landing block's h1.
+        // The cover carries the book's identity, so the wordmark is redundant below
+        // the breakpoint, where the cover is the front door and sizes itself to the
+        // screen.
         .book-title {
             display: none;
         }
 
-        // The same stage metrics on every page, so the cover's height calculation
-        // below is right on a chapter page as well as the landing one.
-        .sidebar-content {
-            gap: 1rem;
-            padding: 1.5rem 1.25rem;
-        }
-
-        // The landing page's cover is now a whole screen of flat cover art, centred
-        // on the dark stage. Tapping it scrolls to the sign-up, so the form is
-        // deliberately below the fold on this page.
         // Below the breakpoint the cover is a whole screen of flat art on every page:
-        // the reading pane, the sign-up and the contents all sit below it.
+        // the reading pane, the sign-up and the contents all sit below it, which is
+        // what makes tapping it meaningful.
         .cover-trigger {
             display: block;
             width: 100%;
-            // The stage's own vertical padding, so a full-height cover still fits
-            // inside one screen.
-            // Minus the contents strip as well as the stage's own padding, so the strip
-            // never sits over the artwork — the cover's author line is at its top left.
-            height: calc(100dvh - 3rem - var(--toc-bar));
+            // The stage's 3rem of top padding is what clears the contents strip, so
+            // the strip never sits over the artwork — the cover's author line is at
+            // its top left — and the cover starts where the strip ends.
+            //
+            // Subtracting the stage's own gap as well is what puts the sign-up just
+            // past the fold: cover + gap now lands exactly on 100dvh. Without it the
+            // form's top edge — the email field — sat ~32px up inside the first
+            // screen, so the cover no longer read as a full screen of cover art.
+            height: calc(100dvh - var(--toc-bar) - 1rem);
         }
 
         .cover-trigger picture {
