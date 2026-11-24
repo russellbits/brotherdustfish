@@ -71,11 +71,11 @@
     align-items: flex-end;
     gap: 10px;
 
-    @media (max-width: $tablet-max) {
-        // Below the black contents strip, which owns the very top of the screen.
-        top: calc(var(--toc-bar) + 12px);
-        right: 12px;
-    }
+    // @media (max-width: $tablet-max) {
+    //     // Below the black contents strip, which owns the very top of the screen.
+    //     top: calc(var(--toc-bar) + 12px);
+    //     right: 12px;
+    // }
 }
 
 .nav-toggle {
