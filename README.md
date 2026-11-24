@@ -1,8 +1,20 @@
 # Brother Dustfish
 
+[https://brotherdustfish.com](https://brotherdustfish.com)
+
+### A novel in progess by [R.E. Warner](https://bit.ly/4ieLOik)
+
 ## This is an Interactive (and expandable) Novel
 
 This is the web site for my newest novel, "Brother Dustfish". While there is a version of the book that goes from A to Z and has a beginning middle and end (and will be available in book form soon)—*this* version is a touch more interactive. It uses a hyperarticle/hyperstory concept and HTMX to "drop in" content when the user looks for more information behind a link.
+
+## AI
+
+This book is 100% human written. The illustrations are AI. I would love to comission an illustrator but I am a writer and broke most of the time, so AI illustrations it is. If the book ever sells enough copies, I'll get a real illustrator.
+
+## Editing and Suggestions
+
+Anyone who is interested is free to contirbute to this book. Simply pull an issue for the repo and I'll consider it. The issue can take the form of an idea for the story, to any kind of spelling or grammatical edits. However, if it's clear that the suggestion is coming from AI, I mean to ignore it.
 
 ## Excerpt (If You're Curious)
 
