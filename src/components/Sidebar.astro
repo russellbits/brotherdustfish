@@ -1,16 +1,10 @@
 ---
-import { getCollection } from 'astro:content';
-import { orderedChapters } from '../lib/chapters';
 import { TABLET_QUERY } from '../lib/breakpoints';
-import SignupForm from './SignupForm.astro';
-import TocList from './TocList.astro';
-
-const sortedChapters = orderedChapters(await getCollection('chapters'));
+import EarlyPurchaseDialog from './EarlyPurchaseDialog.astro';
 ---
 
 <div class="sidebar" transition:persist id="sidebar">
     <div class="sidebar-content">
-        <h1 class="book-title"><a href="/">Brother Dustfish</a></h1>
         <!-- A button, not <a href="#">: the ClientRouter intercepts any click on
              `a, area` and treats a same-page href as a real navigation, which
              swapped the body out from under the freshly opened overlay. -->
@@ -29,84 +23,40 @@ const sortedChapters = orderedChapters(await getCollection('chapters'));
                 <img src="/images/3D-book-cover-sm.png" alt="Brother Dustfish — book cover" />
             </picture>
         </button>
-
-        <!-- One sign-up for the whole site. On desktop it sits below the cover in
-             the column; below the breakpoint it is the reason the cover stage
-             scrolls, sitting just past the fold. -->
-        <div class="cover-signup">
-            <SignupForm />
+        <h1 class="book-title"><a href="/">Brother Dustfish</a></h1>
+        <h4>A Novel in Progress by</h4>
+        <h3><a href="https://www.goodreads.com/author/show/5019350.R_E_Warner">R.E. Warner</a></h3>
+        <!-- The sidebar's job is these three actions; the contents are the tab at the
+             top of the screen now.
+             The downloads are the *served* path, not the authored one: Astro copies
+             public/ verbatim, so the file at public/downloads/x.pdf is served from
+             /downloads/x.pdf and a /public/... href would 404. -->
+        <div class="sidebar-actions">
+            <a class="sidebar-action" href="/downloads/brother-dustfish.250922.pdf" download>
+                Downloads
+            </a>
+            <!--<a class="sidebar-action" href="/downloads/brother-dustfish.250922.epub" download>-->
+            <EarlyPurchaseDialog />
         </div>
-
-        <!-- The table of contents is rendered twice on purpose: a visible list on
-             desktop, and a native disclosure below it. A single <details> cannot
-             be forced open by CSS reliably, because browsers hide its closed
-             content in a way author styles do not always override. TocList keeps
-             the chapter markup in one place. -->
-        <nav class="toc" aria-label="Table of contents">
-            <h2>Table of Contents</h2>
-            <TocList chapters={sortedChapters} />
-        </nav>
-
-        <details class="toc-disclosure">
-            <summary>Table of Contents</summary>
-            <TocList chapters={sortedChapters} />
-        </details>
     </div>
 </div>
 
 <script>
     import { TABLET_QUERY } from '../lib/breakpoints';
 
-    // Below the layout breakpoint, and only when a chapter was chosen from the
-    // contents: dismiss the disclosure and land the reader at the top of the chapter
-    // content rather than on the header the sidebar leaves above it.
-    const STACKED = TABLET_QUERY;
-    let choseChapter = false;
-
+    // Tapping the cover reaches the actions. Below the breakpoint the cover is a whole
+    // screen of art, so everything the sidebar holds is past the fold and the tap is
+    // the affordance that gets there. The zoom overlay is a desktop affordance for the
+    // small 3D thumbnail and is suppressed below the breakpoint, because enlarging an
+    // already screen-sized cover achieves nothing.
     document.addEventListener('click', (event) => {
         const target = event.target;
         if (!(target instanceof Element)) return;
 
-        const link = target.closest('.toc-disclosure a');
-        if (!link) return;
+        if (!target.closest('#coverTrigger')) return;
+        if (!window.matchMedia(TABLET_QUERY).matches) return;
 
-        choseChapter = true;
-
-        // The sidebar carries `transition:persist`, so it survives the navigation
-        // and an opened disclosure would still be open on the chapter page.
-        const disclosure = link.closest('details');
-        if (disclosure instanceof HTMLDetailsElement) disclosure.open = false;
-    });
-
-    // astro:page-load rather than astro:after-swap: it fires once the new page is
-    // ready and the router has settled the scroll position, so scrolling earlier
-    // would simply be overwritten.
-    document.addEventListener('astro:page-load', () => {
-        if (!choseChapter) return;
-        choseChapter = false;
-
-        if (!window.matchMedia(STACKED).matches) return;
-        document.querySelector('.main-content')?.scrollIntoView({ block: 'start' });
-    });
-
-    // Tapping the cover takes the reader to the sign-up.
-    //
-    // The cover fills the first screen below the layout breakpoint, so the form is
-    // deliberately below the fold — this tap is the affordance that reaches it. The
-    // zoom overlay is a desktop affordance for the small 3D thumbnail and is
-    // suppressed below the breakpoint, because enlarging an already screen-sized
-    // cover achieves nothing.
-    document.addEventListener('click', (event) => {
-        const target = event.target;
-        if (!(target instanceof Element)) return;
-
-        const control = target.closest('#coverTrigger');
-        if (!control) return;
-        if (!window.matchMedia(STACKED).matches) return;
-
-        // The cover is a full screen of art on every page, so a tap has to lead
-        // somewhere: to the sign-up, which sits just past the fold.
-        document.querySelector('.cover-signup')?.scrollIntoView({
+        document.querySelector('.sidebar-actions')?.scrollIntoView({
             behavior: 'smooth',
             block: 'start',
         });
@@ -165,29 +115,50 @@ const sortedChapters = orderedChapters(await getCollection('chapters'));
         }
     }
 
-    // Desktop's always-visible contents. Below 1024px the disclosure replaces it.
-    .toc {
-        width: 100%;
-        margin: 2rem 0 2rem 5rem;
-        // The sidebar chrome (title, cover) stays centered; the TOC reads as a
-        // left-aligned list.
-        text-align: left;
+    .sidebar-actions {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+        width: min(100%, 18rem);
+        margin-top: 2rem;
+    }
 
-        h2 {
-            font-family: 'Georgia', serif;
-            font-size: 1.6rem;
-            margin-bottom: 1rem;
-            padding-bottom: 0.5rem;
+    // `:global` because the early-purchase button is rendered by the dialog component,
+    // which carries a different style scope, so its element cannot match a scoped rule
+    // here. The class is the contract between the two components.
+    :global(.sidebar-action) {
+        padding: 0.7rem 1rem;
+        border: 1px solid var(--text-color-light);
+        border-radius: 4px;
+        background: transparent;
+        color: var(--text-color-light);
+        font-family: 'Georgia', serif;
+        font-size: 1rem;
+        text-align: center;
+        text-decoration: none;
+        cursor: pointer;
+        transition: background-color 0.3s ease, color 0.3s ease;
+
+        &:hover {
+            background: var(--text-color-light);
+            color: #000;
+        }
+
+        &:focus-visible {
+            outline: 2px solid var(--sidebar-link-hover);
+            outline-offset: 2px;
         }
     }
 
-    .toc-disclosure {
-        display: none;
+    @media (prefers-reduced-motion: reduce) {
+        :global(.sidebar-action) {
+            transition: none;
+        }
     }
 
     @media (max-width: $tablet-max) {
         // Below the breakpoint the sidebar is the site's cover: a full-height stage
-        // whose contents are centered down the screen, with the sign-up just past
+        // whose contents are centered down the screen, with the actions just past
         // the fold. It is the same stage on every page, so the cover's height
         // calculation below is right everywhere.
         .sidebar-content {
@@ -211,19 +182,19 @@ const sortedChapters = orderedChapters(await getCollection('chapters'));
         }
 
         // Below the breakpoint the cover is a whole screen of flat art on every page:
-        // the reading pane, the sign-up and the contents all sit below it, which is
-        // what makes tapping it meaningful.
+        // the reading pane and the actions all sit below it, which is what makes
+        // tapping it meaningful.
         .cover-trigger {
             display: block;
             width: 100%;
-            // The stage's 3rem of top padding is what clears the contents strip, so
-            // the strip never sits over the artwork — the cover's author line is at
-            // its top left — and the cover starts where the strip ends.
+            // The stage's 3rem of top padding is what clears the contents tab, so the
+            // tab never sits over the artwork — the cover's author line is at its top
+            // left — and the cover starts where the tab ends.
             //
-            // Subtracting the stage's own gap as well is what puts the sign-up just
+            // Subtracting the stage's own gap as well is what puts the actions just
             // past the fold: cover + gap now lands exactly on 100dvh. Without it the
-            // form's top edge — the email field — sat ~32px up inside the first
-            // screen, so the cover no longer read as a full screen of cover art.
+            // top of the actions sat ~32px up inside the first screen, so the cover no
+            // longer read as a full screen of cover art.
             height: calc(100dvh - var(--toc-bar) - 1rem);
         }
 
@@ -264,71 +235,5 @@ const sortedChapters = orderedChapters(await getCollection('chapters'));
         // whole cover sits inside it.
         //
         // If the cover art is ever replaced, this ratio changes with it.
-
-
-        .toc {
-            display: none;
-        }
-
-        // A black strip across the top of the screen whose panel folds down *over* the
-        // page: it is fixed, so opening it cannot move the article underneath. Choosing
-        // a chapter closes it again — the tap handler already does that, and scrolls to
-        // the content.
-        .toc-disclosure {
-            display: block;
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            z-index: 1050;
-            background: #000;
-            color: var(--text-color-light);
-            text-align: left;
-            max-height: 100dvh;
-            overflow-y: auto;
-
-            summary {
-                display: flex;
-                align-items: center;
-                gap: 0.5rem;
-                min-height: var(--toc-bar);
-                padding: 0 1.25rem;
-                font-family: 'Georgia', serif;
-                font-size: 1.05rem;
-                color: var(--text-color-light);
-                cursor: pointer;
-                // The engine-drawn triangle sits differently in every browser; the caret
-                // below replaces it.
-                list-style: none;
-
-                &::-webkit-details-marker {
-                    display: none;
-                }
-
-                &::after {
-                    content: '▾';
-                    margin-left: auto;
-                    transition: transform 0.2s ease;
-                }
-            }
-
-            &[open] {
-                padding-bottom: 1.25rem;
-            }
-
-            &[open] summary {
-                border-bottom: 1px solid rgba(255, 255, 255, 0.15);
-
-                &::after {
-                    transform: rotate(180deg);
-                }
-            }
-
-            // The list is rendered by TocList, so its own styles carry a different
-            // scope: this has to reach outside this component to inset it.
-            :global(.toc-list) {
-                padding: 0 1.25rem;
-            }
-        }
     }
 </style>

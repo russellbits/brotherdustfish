@@ -46,11 +46,18 @@ $transition-speed: 0.5s;
     background-color: var(--bg-color);
 }
 
-// The black contents strip on stacked layouts. One value: the strip's height also
-// offsets the page controls below it and shortens the cover's box, so those three
-// cannot disagree.
+// The contents tab at the top of the screen, and the darkened transparency the two
+// full-view overlays share.
 :root {
+    // The tab's height, and one value for its three users: the tab's own box, the
+    // contents panel's clearance below that tab, and the cover's box on a stacked
+    // layout. Nothing else may carry its own copy of the number.
     --toc-bar: 3rem;
+
+    // The contents panel and the early-purchase dialog. "80% transparent" in the
+    // reader's terms: the site stays legible through it. One dial, so the two
+    // overlays cannot disagree.
+    --scrim: rgba(0, 0, 0, 0.8);
 
     // The reading scale the text-size buttons move through. It multiplies the chapter's
     // body copy and the drop expansions — captions included, since they inherit — and
