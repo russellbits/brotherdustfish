@@ -13,7 +13,14 @@
         background-color 0.4s ease,
         color 0.4s ease;
 
-    &.sidebar-collapsed {
+    // The collapsed state lives on #sidebar, not on this element. The sidebar is
+    // `transition:persist`, so it and its class survive a client-side navigation;
+    // this element is <body>, which the router replaces on every in-site navigation,
+    // so a class here is discarded on the way to the next chapter — which reopened
+    // the column at 350px with the sidebar still translated off it, leaving a strip
+    // of page background. `:has()` reads the persisted element, so the layout and the
+    // sidebar cannot disagree.
+    &:has(.sidebar.hidden) {
         grid-template-columns: 0px 1fr;
     }
 }
@@ -111,7 +118,9 @@
     }
 }
 
-.layout-wrapper.sidebar-collapsed .nav-toggle svg {
+// The same condition as the collapse above, so the arrow follows the sidebar's own
+// state and cannot be left pointing the wrong way after a navigation.
+.layout-wrapper:has(.sidebar.hidden) .nav-toggle svg {
     transform: rotate(180deg);
 }
 
@@ -124,9 +133,10 @@
         // overflow rule on their own container would clip them.
         overflow-x: hidden;
 
-        &.sidebar-collapsed {
-            grid-template-columns: 0px 1fr; // Fallback
-        }
+        // No collapsed rule here: below the breakpoint the wrapper is a flex column,
+        // so grid-template-columns does nothing, the toggle is hidden, and the
+        // sidebar's own `transform: none !important` already neutralises the collapsed
+        // class if it was set at a wider width.
     }
 
     .sidebar {
