@@ -393,6 +393,26 @@ test('the contents panel is a full screen darkened scrim, sized by the one token
 // The overlay was styled in two places — here and in CoverZoom.astro — where the
 // component won on specificity and the global rule quietly filled any property it did
 // not set. One owner, so there is nothing to reconcile.
+// The ornament's cells are built by the script, so they carry no scope attribute: a
+// scoped rule would silently never match them, which is the same trap the drop
+// expansions document. Their geometry and colours are the library's numbers, handed
+// over as custom properties, so the stylesheet holds no second copy of either.
+test('the life ornament is styled globally, from the library’s own numbers', { skip }, () => {
+  const css = stylesheet();
+
+  assert.ok(
+    !/\.life-(break|cell)\[data-astro-cid-/.test(css),
+    'the ornament styles are scoped and can never match the injected cells',
+  );
+
+  assert.ok(css.includes('grid-template-columns:repeat(var(--life-cols), var(--life-cell))'));
+  assert.ok(css.includes('transition:background-color var(--life-fade) linear'));
+  assert.ok(css.includes('background-color:var(--life-dead)'));
+  assert.ok(css.includes('background-color:var(--life-alive)'));
+
+  assert.ok(!/c3b29d|6f665a/i.test(css), 'the stylesheet hardcodes a cell colour');
+});
+
 test('the cover overlay is styled in one place, with the values that work', { skip }, () => {
   const css = stylesheet();
   const component = readFileSync(resolve(process.cwd(), 'src/components/CoverZoom.astro'), 'utf8');
