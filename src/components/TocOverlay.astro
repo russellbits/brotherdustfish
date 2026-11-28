@@ -1,0 +1,153 @@
+---
+import { getCollection } from 'astro:content';
+import { orderedChapters } from '../lib/chapters';
+import TocList from './TocList.astro';
+
+const chapters = orderedChapters(await getCollection('chapters'));
+---
+
+<!--
+  The contents: one tab, one panel, the same at every width. The tab is the only way
+  in — the sidebar holds the download and purchase actions now — and the panel is the
+  only way to the chapters, so the two live together and cannot drift apart.
+-->
+<button
+    type="button"
+    id="tocTab"
+    class="toc-tab"
+    aria-controls="tocPanel"
+    aria-expanded="false"
+>Table of Contents</button>
+
+<div id="tocPanel" class="toc-panel">
+    <nav class="toc-panel__inner" aria-label="Table of contents">
+        <TocList chapters={chapters} />
+    </nav>
+</div>
+
+<script>
+    // Delegated from `document` because the ClientRouter replaces the body on an
+    // in-site navigation while a module script only ever runs once: listeners bound
+    // to the panel itself would be gone after the first chapter change.
+    const TAB_ID = 'tocTab';
+    const PANEL_ID = 'tocPanel';
+    const OPEN_CLASS = 'is-open';
+
+    const panel = () => document.getElementById(PANEL_ID);
+    const tab = () => document.getElementById(TAB_ID);
+    const isOpen = () => panel()?.classList.contains(OPEN_CLASS) ?? false;
+
+    function setOpen(open: boolean) {
+        panel()?.classList.toggle(OPEN_CLASS, open);
+        // The tab is the control that opens it, so the tab carries the state.
+        tab()?.setAttribute('aria-expanded', String(open));
+    }
+
+    document.addEventListener('click', (event) => {
+        const target = event.target;
+        if (!(target instanceof Element)) return;
+
+        if (target.closest(`#${TAB_ID}`)) {
+            setOpen(!isOpen());
+            return;
+        }
+
+        if (!isOpen()) return;
+
+        // A chapter link closes the panel and is left alone to navigate.
+        if (target.closest(`#${PANEL_ID} a`)) {
+            setOpen(false);
+            return;
+        }
+
+        // Everything else in the panel is the scrim. The panel covers the whole
+        // view, so there is no "outside" left to click and the dark area is what a
+        // reader dismisses with.
+        if (target.closest(`#${PANEL_ID}`)) setOpen(false);
+    });
+
+    document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape' && isOpen()) setOpen(false);
+    });
+
+    // A new page arrives with the panel shut, because the router replaces the body.
+    // Clearing the class on load keeps the tab's aria-expanded from outliving the
+    // panel it describes.
+    document.addEventListener('astro:page-load', () => setOpen(false));
+</script>
+
+<style lang="scss">
+    .toc-tab {
+        position: fixed;
+        // Centered over the whole view, not just the reading pane, so the tab sits
+        // in the same place on every page.
+        top: 0;
+        left: 50%;
+        transform: translateX(-50%);
+        // Above the panel: the control that pulls it down is also the control that
+        // sends it back up.
+        z-index: 1060;
+        height: var(--toc-bar);
+        padding: 0 1.5rem;
+        border: 0;
+        border-radius: 0 0 0.5rem 0.5rem;
+        background: #000;
+        color: var(--text-color-light);
+        font-family: 'Georgia', serif;
+        font-size: 0.95rem;
+        white-space: nowrap;
+        cursor: pointer;
+        -webkit-tap-highlight-color: transparent;
+
+        &:hover {
+            color: var(--sidebar-link-hover);
+        }
+
+        &:focus-visible {
+            outline: 2px solid var(--sidebar-link-hover);
+            outline-offset: -4px;
+        }
+    }
+
+    .toc-panel {
+        position: fixed;
+        inset: 0;
+        // Under the tab and over the reading pane. The fixed page controls keep
+        // their own higher layer.
+        z-index: 1040;
+        background: var(--scrim);
+        color: var(--text-color-light);
+        // Chapters are reachable by scrolling rather than by shrinking the entries,
+        // so the list survives a long book on a short screen.
+        overflow-y: auto;
+        overscroll-behavior: contain;
+        // Shut: off-screen, and `visibility` takes it out of the tab order and the
+        // accessibility tree without `hidden`, which a pull-down cannot animate.
+        visibility: hidden;
+        transform: translateY(-100%);
+        // Visibility flips only once the panel has finished sliding out; opening is
+        // immediate, so the first frame of the slide is visible.
+        transition: transform 0.35s ease, visibility 0s linear 0.35s;
+
+        &.is-open {
+            visibility: visible;
+            transform: translateY(0);
+            transition: transform 0.35s ease, visibility 0s;
+        }
+    }
+
+    .toc-panel__inner {
+        // Clear of the tab, and a gutter below so the last chapter is not flush with
+        // the bottom of the screen.
+        padding: calc(var(--toc-bar) + 3rem) 1.25rem 4rem;
+        width: min(100%, 60rem);
+        margin-inline: auto;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .toc-panel,
+        .toc-panel.is-open {
+            transition: none;
+        }
+    }
+</style>

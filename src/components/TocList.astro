@@ -5,10 +5,13 @@ interface Props {
     chapters: Chapter[];
 }
 
-// The chapter list, used twice: once in the sidebar's always-visible desktop
-// table of contents, and once inside the mobile disclosure. Astro scopes styles
-// to the component that declares them, so the list's own styling lives here
-// rather than in whichever parent happens to render it.
+// The chapter list, rendered only by the contents overlay now that the sidebar
+// holds actions instead. Each entry repeats the chapter-opening block — the number,
+// the title, the summary — set smaller than the chapter page sets it, so the
+// contents read as a preview of each opening rather than a bare index.
+//
+// The overlay is always dark whatever the theme, so the text is always the light
+// colour rather than a theme token.
 const { chapters } = Astro.props;
 ---
 
@@ -16,8 +19,9 @@ const { chapters } = Astro.props;
     {chapters.map((chapter) => (
         <li>
             <a href={chapterHref(chapter)}>
-                <span class="chapter-number">Chapter {chapter.data.number}</span>
-                <span class="chapter-title">{chapter.data.title}</span>
+                <span class="toc-number">Chapter {chapter.data.number}</span>
+                <span class="toc-title">{chapter.data.title}</span>
+                <span class="toc-summary">{chapter.data.summary}</span>
             </a>
         </li>
     ))}
@@ -26,32 +30,59 @@ const { chapters } = Astro.props;
 <style lang="scss">
     .toc-list {
         list-style: none;
+        margin: 0;
         padding: 0;
         display: flex;
         flex-direction: column;
-        gap: 1.1rem;
-        --toc-number-size: 0.9rem;
+        gap: 3rem;
+        text-align: center;
 
         li a {
             display: flex;
             flex-direction: column;
-            align-items: flex-start;
-            row-gap: 0.15rem;
+            align-items: center;
+            gap: 0.4rem;
             color: var(--text-color-light);
             text-decoration: none;
+        }
+
+        // The chapter page's .chapter-ref, scaled down.
+        .toc-number {
+            font-family: sans-serif;
+            font-size: 0.8rem;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+        }
+
+        // The chapter page's h1, scaled down. Bold like the heading it copies —
+        // this is a span, so the weight is not the user agent's to supply.
+        .toc-title {
+            font-family: 'Georgia', serif;
+            font-size: clamp(1.5rem, 3.5vw, 2.5rem);
+            font-weight: 700;
+            line-height: 1.1;
             transition: color 0.3s ease;
+        }
 
-            &:hover {
-                color: var(--sidebar-link-hover);
-            }
+        // The chapter page's .chapter-summary h4, scaled down. Italic and light
+        // rather than bold, exactly as the opening sets it.
+        .toc-summary {
+            font-family: 'Georgia', serif;
+            font-style: italic;
+            font-weight: normal;
+            font-size: 0.95rem;
+            max-width: 55ch;
+        }
 
-            .chapter-number {
-                font-size: var(--toc-number-size);
-            }
+        li a:hover .toc-title,
+        li a:focus-visible .toc-title {
+            color: var(--sidebar-link-hover);
+        }
 
-            .chapter-title {
-                font-size: calc(var(--toc-number-size) + 5px);
-                line-height: 1.25;
+        @media (prefers-reduced-motion: reduce) {
+            .toc-title {
+                transition: none;
             }
         }
     }

@@ -1,6 +1,7 @@
 ---
 import Sidebar from './Sidebar.astro';
 import CoverZoom from './CoverZoom.astro';
+import TocOverlay from './TocOverlay.astro';
 import ThemeToggle from './ThemeToggle.astro';
 import FontSizeControls from './FontSizeControls.astro';
 import { ClientRouter } from 'astro:transitions';
@@ -71,18 +72,29 @@ const { title = "Brother Dustfish" } = Astro.props;
             <slot />
         </main>
         <CoverZoom />
+        <!-- The contents tab and its panel. Rendered by the layout rather than by a
+             page so that every page has it, and outside the reading pane so an
+             in-site navigation cannot leave the panel open: the router replaces the
+             body, and the new panel arrives shut. -->
+        <TocOverlay />
         <!-- One fixed column: the theme switch, then the text-size pair beneath it.
              The column owns the positioning, so the two cannot drift apart. -->
-        <div class="page-controls">
+       <div class="page-controls">
             <ThemeToggle />
             <FontSizeControls />
         </div>
         <script>
             // Delegate from document so the toggle keeps working after
             // ClientRouter swaps the page body (module scripts run only once).
+            //
+            // Only the sidebar carries the state, and only the sidebar *can*: it is
+            // `transition:persist`, so it survives an in-site navigation along with
+            // its class, whereas <body> is replaced on every one. The collapsed
+            // geometry is keyed off this class in _layout.scss
+            // (`.layout-wrapper:has(.sidebar.hidden)`), which is what keeps a sidebar
+            // the reader closed closed when a chapter link loads the next page.
             document.addEventListener('click', (e) => {
                 if (!(e.target instanceof Element) || !e.target.closest('#navToggle')) return;
-                document.querySelector('.layout-wrapper')?.classList.toggle('sidebar-collapsed');
                 document.getElementById('sidebar')?.classList.toggle('hidden');
             });
         </script>
