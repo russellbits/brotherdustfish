@@ -1,0 +1,208 @@
+---
+// Replaces each scene break — `<hr>`, written as `* * *` in the chapter MDX — inside
+// .chapter-body with a Conway's Game of Life ornament. Ordinary paragraph joins keep
+// the indented book flow with no ornament.
+//
+// Include once per page that renders chapter content: ChapterView renders it after
+// the article, and the script finds the breaks itself.
+//
+// Cell size, grid, rounds, fade and both colours all come from src/lib/life.ts, and
+// the stylesheet reads them back as custom properties, so there is one owner for
+// each number. The rules themselves are pinned by test/life.test.ts.
+---
+
+<script>
+    import {
+        ALIVE,
+        CELL,
+        COLS,
+        DEAD,
+        FADE_MS,
+        GAP,
+        ROWS,
+        ROUNDS,
+        randomGrid,
+        step,
+    } from '../lib/life';
+
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+
+    /**
+     * One break's grid.
+     *
+     * The cells are elements whose class flips, and the fade is the stylesheet's
+     * single `transition` rule shared by all of them — one declaration, not ninety-six
+     * animations, and nothing to interpolate by hand.
+     */
+    class Ornament {
+        readonly element: HTMLElement;
+        readonly cells: HTMLElement[] = [];
+        grid: Uint8Array;
+        generation = 0;
+
+        constructor() {
+            this.element = document.createElement('div');
+            this.element.className = 'life-break';
+            this.element.setAttribute('aria-hidden', 'true');
+
+            // The geometry and the palette are the library's numbers, handed to the
+            // stylesheet rather than restated there.
+            const style = this.element.style;
+            style.setProperty('--life-cell', `${CELL}px`);
+            style.setProperty('--life-gap', `${GAP}px`);
+            style.setProperty('--life-cols', String(COLS));
+            style.setProperty('--life-dead', DEAD);
+            style.setProperty('--life-alive', ALIVE);
+            style.setProperty('--life-fade', `${FADE_MS}ms`);
+
+            this.grid = randomGrid();
+
+            // Built detached, so the first paint is the seed itself and not a fade
+            // into it: there is no earlier style for the transition to start from.
+            for (let i = 0; i < COLS * ROWS; i++) {
+                const cell = document.createElement('span');
+                cell.className = 'life-cell';
+                if (this.grid[i] === 1) cell.classList.add('is-alive');
+                this.cells.push(cell);
+                this.element.append(cell);
+            }
+        }
+
+        /** One round, or nothing at all once the run is over. */
+        advance(): void {
+            if (this.generation >= ROUNDS) return;
+
+            this.grid = step(this.grid, COLS, ROWS);
+            this.generation++;
+
+            for (let i = 0; i < this.cells.length; i++) {
+                this.cells[i].classList.toggle('is-alive', this.grid[i] === 1);
+            }
+        }
+    }
+
+    const ornaments = new Map<HTMLElement, Ornament>();
+    let ticker: number | null = null;
+
+    const finished = () =>
+        [...ornaments.values()].every((ornament) => ornament.generation >= ROUNDS);
+
+    function stop(): void {
+        if (ticker === null) return;
+        clearInterval(ticker);
+        ticker = null;
+    }
+
+    function tick(): void {
+        ornaments.forEach((ornament) => ornament.advance());
+
+        // Every ornament runs the same number of rounds and they all start together,
+        // so one that is finished finishes them all: the run ends here rather than on
+        // a timer of its own.
+        if (finished()) stop();
+    }
+
+    function teardown(): void {
+        stop();
+
+        // The exact inverse of injection. On a page swap the router replaces the body
+        // and takes the ornaments with it; this also runs on a reduced-motion change,
+        // where the same document stays. Un-marking the rules is what matters there:
+        // `injectBreaks` skips a rule that is already marked, so a teardown that left
+        // the mark behind would find every break already "replaced" and inject
+        // nothing at all — leaving the collapsed rules and no ornament.
+        ornaments.forEach((ornament) => ornament.element.remove());
+        ornaments.clear();
+
+        document.querySelectorAll('.chapter-body hr.life-break-rule').forEach((rule) => {
+            rule.classList.remove('life-break-rule');
+        });
+    }
+
+    function mount(): void {
+        stop();
+        if (reduceMotion.matches || ornaments.size === 0) return;
+
+        // The first round starts now, so the run is exactly ROUNDS fades: the seed is
+        // what the first fade moves away from. Ticks at 0, 1s, … ROUNDS-1 s put the
+        // last fade's end at ROUNDS * FADE_MS.
+        tick();
+        if (!finished()) ticker = window.setInterval(tick, FADE_MS);
+    }
+
+    function injectBreaks(): void {
+        teardown();
+
+        document.querySelectorAll('.chapter-body').forEach((body) => {
+            // `:not(.life-break-rule)` keeps this idempotent: an already-replaced
+            // break is skipped rather than gaining a second grid.
+            body.querySelectorAll('hr:not(.life-break-rule)').forEach((rule) => {
+                const ornament = new Ornament();
+
+                // The rule stays in the document. It is the scene break, assistive
+                // technology reads it, and without script it is still the visible
+                // rule — the class is what collapses it once an ornament sits there.
+                rule.classList.add('life-break-rule');
+                rule.after(ornament.element);
+                ornaments.set(ornament.element, ornament);
+            });
+        });
+
+        mount();
+    }
+
+    // The ClientRouter swaps the body without reloading, so re-inject after each swap
+    // and drop the old run's handles before it.
+    document.addEventListener('astro:before-swap', teardown);
+    document.addEventListener('astro:after-swap', injectBreaks);
+
+    // Reduced motion shows one static generation, so a change of mind re-mounts into
+    // the new setting rather than leaving a run going.
+    reduceMotion.addEventListener('change', injectBreaks);
+
+    injectBreaks();
+</script>
+
+<style is:global lang="scss">
+    // Global, not scoped: the ornament is built by the script, so its elements carry
+    // no scope attribute and a scoped rule could never match them. The drop
+    // expansions document the same trap.
+
+    .life-break {
+        display: grid;
+        grid-template-columns: repeat(var(--life-cols), var(--life-cell));
+        gap: var(--life-gap);
+        // The tracks are fixed, so the box has to shrink to them or the ornament
+        // would sit at the left edge of a full-width block instead of centred.
+        width: max-content;
+        margin: 2.5rem auto;
+    }
+
+    .life-cell {
+        width: var(--life-cell);
+        height: var(--life-cell);
+        background-color: var(--life-dead);
+        // One fade per round — a cell fades in or out to its next colour, never both
+        // — so the run lasts ROUNDS fades. Linear, because a generation change is a
+        // crossfade rather than an entrance.
+        transition: background-color var(--life-fade) linear;
+
+        &.is-alive {
+            background-color: var(--life-alive);
+        }
+    }
+
+    // Collapses the rule once an ornament has replaced it visually. Applied by the
+    // script, not by this stylesheet, so a reader without script still gets a rule.
+    .life-break-rule {
+        height: 0;
+        margin: 0;
+        border: 0;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .life-cell {
+            transition: none;
+        }
+    }
+</style>
