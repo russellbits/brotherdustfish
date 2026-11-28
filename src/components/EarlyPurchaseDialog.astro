@@ -1,0 +1,207 @@
+---
+// The early-purchase modal: a name and an email, posted to /api/early-purchase.php.
+//
+// That endpoint and its database are deliberately not built yet — the PHP is the
+// next piece and needs the database, the credentials file's home, and the host
+// settled first. Until it exists, a submit fails into the feedback region; nothing
+// else here is incomplete.
+//
+// The pattern is the one already proven on the LOQRS site: a form with a plain
+// action/method fallback *and* an hx-post so htmx swaps the feedback in place, an
+// off-screen honeypot, and an aria-live region for the result.
+---
+
+<button type="button" class="sidebar-action" popovertarget="early-purchase">
+    Reserve A Copy
+</button>
+
+<!--
+  A popover rather than a hand-rolled overlay: the Popover API supplies open/close,
+  Escape-to-dismiss, click-outside (light dismiss on the default `popover=auto`), and
+  the top layer — so the panel cannot be clipped or trapped by the sidebar's own
+  scrolling.
+-->
+<div id="early-purchase" popover class="early-purchase" role="dialog" aria-label="Early purchase">
+    <div class="early-purchase__panel">
+        <button
+            type="button"
+            class="early-purchase__dismiss"
+            popovertarget="early-purchase"
+            popovertargetaction="hide"
+            aria-label="Close"
+        >&times;</button>
+
+        <h2>Early Purchase</h2>
+        <p>
+            Reserve a copy before the book goes on sale. Tell us who you are and where to
+            reach you, and we will be in touch when it is ready.
+        </p>
+
+        <form
+            class="early-purchase__form"
+            action="/api/early-purchase.php"
+            method="POST"
+            hx-post="/api/early-purchase.php"
+            hx-target="#early-purchase-feedback"
+            hx-swap="innerHTML"
+            hx-disabled-elt="find input, find button"
+        >
+            <input
+                id="early-purchase-name"
+                name="name"
+                type="text"
+                placeholder="Your name"
+                autocomplete="name"
+                aria-label="Your name"
+                required
+            />
+            <input
+                id="early-purchase-email"
+                name="email"
+                type="email"
+                placeholder="email@example.com"
+                autocomplete="email"
+                aria-label="Email address"
+                required
+            />
+
+            <!-- Off-screen honeypot: bots fill it out, people and screen readers skip it. -->
+            <div class="hp-field" aria-hidden="true">
+                <label for="early-purchase-website">Website</label>
+                <input
+                    type="text"
+                    id="early-purchase-website"
+                    name="website"
+                    tabindex="-1"
+                    autocomplete="off"
+                />
+            </div>
+
+            <button type="submit">Reserve my copy</button>
+        </form>
+
+        <div id="early-purchase-feedback" class="early-purchase__feedback" aria-live="polite"></div>
+    </div>
+</div>
+
+<style lang="scss">
+    // The panel covers the view behind it with the same scrim the contents panel
+    // uses, so the two overlays read as one device.
+    .early-purchase[popover] {
+        position: fixed;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        max-width: none;
+        max-height: none;
+        margin: 0;
+        padding: 1rem;
+        border: 0;
+        border-radius: 0;
+        background: var(--scrim);
+        color: var(--text-color-light);
+        overflow: auto;
+        overscroll-behavior: contain;
+    }
+
+    // Scoped to :popover-open so the base rule cannot override the user agent's
+    // display:none while the popover is shut.
+    .early-purchase[popover]:popover-open {
+        display: grid;
+        place-items: center;
+    }
+
+    .early-purchase__panel {
+        position: relative;
+        width: min(100%, 30rem);
+        padding: 2.5rem 1.5rem 1.5rem;
+        border-radius: 0.5rem;
+        background: var(--bg-color);
+        color: var(--text-color);
+        box-shadow: 0 1rem 3rem rgba(0, 0, 0, 0.45);
+
+        h2 {
+            font-family: 'Georgia', serif;
+            font-size: 1.5rem;
+            text-align: center;
+            margin: 0 0 0.5rem;
+        }
+
+        p {
+            font-family: 'Georgia', serif;
+            text-align: center;
+            margin: 0 0 1.5rem;
+        }
+    }
+
+    .early-purchase__dismiss {
+        position: absolute;
+        top: 0.25rem;
+        right: 0.25rem;
+        display: grid;
+        place-items: center;
+        width: 2rem;
+        height: 2rem;
+        padding: 0;
+        border: 0;
+        border-radius: 50%;
+        background: transparent;
+        color: inherit;
+        font-size: 1.5rem;
+        line-height: 1;
+        cursor: pointer;
+
+        &:hover {
+            background: rgba(128, 128, 128, 0.18);
+        }
+
+        &:focus-visible {
+            outline: 2px solid currentColor;
+            outline-offset: 2px;
+        }
+    }
+
+    .early-purchase__form {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+
+        input {
+            padding: 0.8rem;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            width: 100%;
+            background: var(--bg-color);
+            color: var(--text-color);
+        }
+
+        button[type='submit'] {
+            padding: 0.8rem;
+            border: none;
+            border-radius: 4px;
+            background: var(--accent-color);
+            color: var(--accent-contrast);
+            font-weight: bold;
+            cursor: pointer;
+
+            &[disabled] {
+                opacity: 0.6;
+                cursor: wait;
+            }
+        }
+    }
+
+    // Off-screen rather than hidden: a bot reads it, an assistive technology ignores it.
+    .hp-field {
+        position: absolute;
+        left: -9999px;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+    }
+
+    .early-purchase__feedback:not(:empty) {
+        margin-top: 1rem;
+        text-align: center;
+    }
+</style>
