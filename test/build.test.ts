@@ -137,12 +137,74 @@ test('chapter 1 is served only from the home page', { skip }, () => {
   assert.equal(redirectTarget(join(DIST, 'chapter/01/index.html')), '/');
 });
 
-// The sidebar owns the sign-up now that there is no landing block to hold a
-// second copy, and the sidebar is in the layout — so every page has exactly one.
-test('every page a reader lands on offers the sign-up exactly once', { skip }, () => {
+// The sidebar's job is the actions now, not a list of chapters: the two downloads
+// and the trigger that opens the early-purchase modal.
+test('every page a reader lands on carries the sidebar actions', { skip }, () => {
   for (const file of renderedPages()) {
-    const count = readFileSync(file, 'utf8').split('class="signup-form"').length - 1;
-    assert.equal(count, 1, `${relative(DIST, file)} renders the sign-up form ${count} times`);
+    const page = readFileSync(file, 'utf8');
+
+    for (const fragment of [
+      'href="/downloads/brother-dustfish.250922.pdf"',
+      'href="/downloads/brother-dustfish.250922.epub"',
+      'popovertarget="early-purchase"',
+    ]) {
+      assert.ok(page.includes(fragment), `${relative(DIST, file)} is missing ${fragment}`);
+    }
+  }
+});
+
+// The href is the site-root path, not the /public/ path the file is authored at,
+// and a download link that 404s stays invisible until a reader clicks it.
+test('every download the pages link to actually shipped', { skip }, () => {
+  const linked = new Set(
+    renderedPages().flatMap((file) =>
+      [...readFileSync(file, 'utf8').matchAll(/href="(\/downloads\/[^"]*)"/g)].map(
+        ([, href]) => href,
+      ),
+    ),
+  );
+
+  assert.ok(linked.size > 0, 'no download links found on any page');
+
+  for (const href of linked) {
+    assert.ok(existsSync(join(DIST, href)), `${href} is linked but is not in ${DIST}`);
+  }
+});
+
+// The contents are one mechanism at every width: a tab that pulls the chapters
+// down over the page. There is no sidebar list and no <details> disclosure left,
+// so the tab is the only way to the chapters and it has to be on every page.
+test('every page carries the contents tab and a panel linking every chapter', { skip }, () => {
+  // Derived from the content folder rather than hardcoded, so a new chapter is
+  // covered without editing this. Mirrors the <NN>-<slug> rule that chapterHref
+  // owns; that rule itself is pinned by test/chapters.test.ts.
+  const chapters = readdirSync(resolve(process.cwd(), 'src/content/chapters'), {
+    withFileTypes: true,
+  })
+    .filter((entry) => entry.isDirectory())
+    .map((entry) => entry.name)
+    .map((folder) => {
+      const [, number, slug] = /^(\d+)-(.+)$/.exec(folder)!;
+      return number === '01' ? '/' : `/chapter/${number}/${slug}`;
+    });
+
+  assert.ok(chapters.length > 0, 'no chapters found under src/content/chapters');
+
+  for (const file of renderedPages()) {
+    const page = readFileSync(file, 'utf8');
+    const where = relative(DIST, file);
+
+    assert.ok(page.includes('id="tocTab"'), `${where} has no contents tab`);
+    assert.ok(page.includes('id="tocPanel"'), `${where} has no contents panel`);
+    assert.ok(!page.includes('toc-disclosure'), `${where} still renders the old disclosure`);
+    assert.ok(!page.includes('<details'), `${where} still renders a <details>`);
+
+    for (const href of chapters) {
+      assert.ok(
+        page.includes(`href="${href}"`),
+        `${where} does not link the chapter at ${href}`,
+      );
+    }
   }
 });
 
@@ -205,6 +267,32 @@ test('every swap target in a page exists in that page', { skip }, () => {
       );
     }
   }
+});
+
+// `#sidebar` carries `transition:persist`, so the element and its `.hidden` class
+// survive a client-side navigation — while <body>, which the router replaces, does
+// not. Keying the collapsed geometry off a class on the wrapper is what left a
+// collapsed sidebar replaced by a 350px strip of page background the moment a
+// chapter link was followed: the sidebar stayed translated away, and the column
+// reopened behind it.
+test('the collapsed sidebar keys the layout off the persisted element', { skip }, () => {
+  const css = stylesheet();
+
+  assert.match(
+    css,
+    /\.layout-wrapper:has\(\.sidebar\.hidden\)[^{]*\{[^}]*grid-template-columns:0 1fr/,
+  );
+  assert.match(
+    css,
+    /\.layout-wrapper:has\(\.sidebar\.hidden\) \.nav-toggle svg\{[^}]*transform:rotate\(180deg\)/,
+  );
+  assert.ok(!css.includes('sidebar-collapsed'), 'the stylesheet still keys off the wrapper class');
+
+  const layout = readFileSync(resolve(process.cwd(), 'src/components/Layout.astro'), 'utf8');
+  assert.ok(
+    !layout.includes("'sidebar-collapsed'"),
+    'Layout.astro still toggles the class on the wrapper, which navigation discards',
+  );
 });
 
 // ── styles ───────────────────────────────────────────────────────────────────
@@ -282,17 +370,22 @@ test('the reading-scale steps live in CSS', { skip }, () => {
   assert.match(css, /\.expansion-paragraph\{[^}]*var\(--reading-scale\)/);
 });
 
-test('the mobile contents strip is black, fixed, and sized by the one token', { skip }, () => {
+test('the contents panel is a full screen darkened scrim, sized by the one token', { skip }, () => {
   const css = stylesheet();
 
   assert.match(css, /--toc-bar:3rem/);
-  // Only the stacked rule carries these, so each matches the strip rather than the
-  // desktop `display: none` above it.
-  assert.match(css, /\.toc-disclosure[^{]*\{[^}]*background:#000/);
-  assert.match(css, /\.toc-disclosure[^{]*\{[^}]*position:fixed/);
+  // 0.8 is what the reader asked for by "80% transparent": the site stays legible
+  // through it. One token, so the dial is in one place. Both spellings are accepted
+  // because the minifier rewrites the source's `rgba(0, 0, 0, 0.8)` to `#000c` — the
+  // same colour and the same alpha — and a spelling change is not a regression.
+  assert.match(css, /--scrim:\s*(rgba\(0,\s*0,\s*0,\s*0?\.8\)|#000c)/);
 
-  // One value with three users: the strip's height, the controls' offset below it,
-  // and the cover's box.
+  assert.ok(css.includes('background:var(--scrim)'), 'the panel does not use the scrim token');
+  assert.match(css, /\.toc-panel[^{]*\{[^}]*position:fixed/);
+  assert.match(css, /\.toc-panel[^{]*\{[^}]*transform:translateY\(-100%\)/);
+
+  // One value with three users: the tab's height, the panel's clearance below that
+  // tab, and the cover's box.
   const users = (css.match(/var\(--toc-bar\)/g) ?? []).length;
   assert.ok(users >= 3, `--toc-bar is used by ${users} rules, expected at least 3`);
 });
